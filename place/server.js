@@ -48,7 +48,7 @@ wss.on('connection', function(ws) {
   	ws.on('pong', heartbeat);
 
 	// send initial board: this is slow!!!
-	for(x=0;x<dim;x++){
+	for (x=0;x<dim;x++){
 		for(y=0;y<dim;y++){
 			var o = { 'x' : x, 'y' : y, 'r': board[x][y].r, 'g': board[x][y].g, 'b': board[x][y].b };
 			ws.send(JSON.stringify(o));
@@ -59,7 +59,7 @@ wss.on('connection', function(ws) {
 	ws.on('message', function(message) {
 		console.log(message);
 		var o = JSON.parse(message);
-		if(isValidSet(o)){
+		if (isValidSet(o)){
 			wss.broadcast(message);
 			board[o.x][o.y] = { 'r': o.r, 'g': o.g, 'b': o.b };
 		}
