@@ -63,19 +63,20 @@ function readBytes(byteString) {
 	return board;
 }
 
+const redisKey = "board";
 wss.on('connection', function(ws) {
 	// heartbeat
+	console.log("New Socket Connection");
   	ws.isAlive = true;
   	ws.on('pong', heartbeat);
 	
 	//Client first connects to websocket
 	//Need to send the redit board here.
-	redisClient.send_command("GET", [key], function(err, reply) {
+	redisClient.send_command("GET", [redisKey], function(err, reply) {
 		if (err) {console.log(err); send(ws, "ERROR", {"message": err})};
 		if (reply) {
-				console.log("Size " + reply.length);
-				console.log(readBytes(reply));
-				send(ws, "INIT", readBytes(reply));
+				console.log(`REDIS GET ${redisKey}, Size: ${reply.length}`);
+				send(ws, "INIT", {board: readBytes(reply)});
 		}
 	});
 
@@ -87,17 +88,6 @@ wss.on('connection', function(ws) {
 	// 	}
 	// }
 
-	
-
-client.on('error', function (err) {
-	console.log("Error " + err);
-});
-var key = "board";
-// Gets the board from redis cache
-
-
-
-
 	// when we get a message from the client
 	ws.on('message', function(message) {
 		var o = JSON.parse(message);
@@ -106,7 +96,16 @@ var key = "board";
 				console.log(o)
 				break;
 			case "WRITE":
+				console.log(o.payload);
+				offset = parseInt(o.payload.x) + parseInt(o.payload.y) * 250;
+				console.log(offset);
+				value = parseInt(o.payload.num);
 				console.log("New data to write from user " + o.payload.user);
+				redisClient.send_command("BITFIELD", [redisKey, "SET", "u8", `#${offset}`, value], function(err, reply) {
+        				if (err) console.log(err);
+        				console.log(reply);
+					wss.broadcast(JSON.stringify({command:"READ", payload:o}));;	
+				});	
 				//Validate if valid input (color validation)
 				//Write to dynamo
 				//Write to redis
