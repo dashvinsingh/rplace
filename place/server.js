@@ -1,6 +1,12 @@
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 8081 });
- 
+const dotenv = require('dotenv');
+var redis = require("redis")
+dotenv.config();
+
+const env = process.env;
+const wss = new WebSocket.Server({ port: env.WS_PORT });
+const redisClient = redis.createClient("redis://r-place-redis-cache-001.tjlnvm.0001.use2.cache.amazonaws.com", {return_buffer:true});
+
 var dim = 250; // note: this is not the right dimensions!!
 var board=new Array(dim);
 for(var x=0;x<dim;x++){
@@ -22,6 +28,7 @@ wss.broadcast = function broadcast(data) {
   });
 };
 
+
 // for heartbeat to make sure connection is alive 
 function noop() {}
 function heartbeat() {
@@ -42,27 +49,76 @@ function isValidSet(o){
 	} 
 	return isValid;
 }
+
+function send(ws, command, payload) {
+	ws.send(JSON.stringify({command: command, payload: payload}))
+}
+
+function readBytes(byteString) {
+	buff = Buffer.from(byteString);
+	var board = [];
+	for (var i=0; i<buff.length; i++) {
+			board.push(buff[i]);
+	}
+	return board;
+}
+
 wss.on('connection', function(ws) {
 	// heartbeat
   	ws.isAlive = true;
   	ws.on('pong', heartbeat);
+	
+	//Client first connects to websocket
+	//Need to send the redit board here.
+	redisClient.send_command("GET", [key], function(err, reply) {
+		if (err) {console.log(err); send(ws, "ERROR", {"message": err})};
+		if (reply) {
+				console.log("Size " + reply.length);
+				console.log(readBytes(reply));
+				send(ws, "INIT", readBytes(reply));
+		}
+	});
 
 	// send initial board: this is slow!!!
-	for (x=0;x<dim;x++){
-		for(y=0;y<dim;y++){
-			var o = { 'x' : x, 'y' : y, 'r': board[x][y].r, 'g': board[x][y].g, 'b': board[x][y].b };
-			ws.send(JSON.stringify(o));
-		}
-	}
+	// for (x=0;x<dim;x++){
+	// 	for(y=0;y<dim;y++){
+	// 		var o = { 'x' : x, 'y' : y, 'r': board[x][y].r, 'g': board[x][y].g, 'b': board[x][y].b };
+	// 		ws.send(JSON.stringify(o));
+	// 	}
+	// }
+
+	
+
+client.on('error', function (err) {
+	console.log("Error " + err);
+});
+var key = "board";
+// Gets the board from redis cache
+
+
+
 
 	// when we get a message from the client
 	ws.on('message', function(message) {
-		console.log(message);
 		var o = JSON.parse(message);
-		if (isValidSet(o)){
-			wss.broadcast(message);
-			board[o.x][o.y] = { 'r': o.r, 'g': o.g, 'b': o.b };
+		switch(o.command) {
+			case "INIT":
+				console.log(o)
+				break;
+			case "WRITE":
+				console.log("New data to write from user " + o.payload.user);
+				//Validate if valid input (color validation)
+				//Write to dynamo
+				//Write to redis
+				//Broadcast to all clients
+				// if (isValidSet(o)){
+				// 	wss.broadcast(message);
+				// 	board[o.x][o.y] = { 'r': o.r, 'g': o.g, 'b': o.b };
+				// }
+			default:
+				break;
 		}
+
 	});
 });
 
@@ -84,7 +140,7 @@ var app = express();
 // https://expressjs.com/en/starter/static-files.html
 app.use('/',express.static('static_files')); // this directory has files to be returned
 
-app.listen(8080, function () {
-  console.log('Example app listening on port 8080!');
+app.listen(env.APP_PORT, function () {
+  console.log(`Example app listening on port ${env.APP_PORT}!`);
 });
 
