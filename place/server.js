@@ -84,6 +84,30 @@ var app = express();
 // https://expressjs.com/en/starter/static-files.html
 app.use('/',express.static('static_files')); // this directory has files to be returned
 
+
+// Code to handle session functionality: made using https://glebbahmutov.com/blog/express-sessions/
+const session = require('express-session');
+const FileStore = require('session-file-store')(session)
+
+app.use(session({
+	name: 'server-session-cookie-id',
+	secret: 'session secret',
+	saveUninitialized: true,
+	resave: true,
+	store: new FileStore()
+}));
+
+app.use(function printSession(req, res, next) {
+	console.log('req.session', req.session);
+	return next();
+  });
+
+
+
+
+
+
+
 app.listen(8080, function () {
   console.log('Example app listening on port 8080!');
 });
