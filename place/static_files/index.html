@@ -11,45 +11,105 @@
     <script src="jquery-3.1.1.min.js"></script>
     <script type="text/javascript">
   
+    function send(ws, command, payload) {
+      ws.send(JSON.stringify({command: command, payload: payload}))
+    }
+
+    
+    function colorPixel(o) {
+	 var context = document.getElementById('canvas').getContext('2d');
+	 context.fillStyle = 'rgb('+o.r+','+o.g+','+o.b+')';
+         context.fillRect(o.x, o.y, 3, 3);
+    }
+
+    function getColors(num) {
+    	//given a 8 bit integer with max value 127 (i.e. 7 bits)
+	//bits r: 0-1, g:2-3, b: 4-5
+	var r = num & 3
+	var g = num >> 2 & 3
+	var b = num >> 4 & 3
+
+	//dividing 255/4 cus each bit can represent 4 value, so final rgb is r/g/b + 1 * 63
+	//return [r , g , b]
+	return {"r": (r) * 85, "g": (g) * 85, "b": (b) * 85}
+    }
+
+    function rgbToNum(r, g, b) {
+    	// r, g, b can range from 1 to 4
+	var num = 0 | (r)
+	num |= (g) << 2
+	num |= (b) << 4
+	return num 
+    }
+
       var socket;
 
       $(function() {
-        // socket = new WebSocket("ws://cslinux.utm.utoronto.ca:8001");
-        // socket = new WebSocket("ws://localhost:8001");
+
         socket = new WebSocket("ws://"+window.location.hostname+":8081");
+
         socket.onopen = function (event) {
           $('#sendButton').removeAttr('disabled');
-          console.log("connected");
+          console.log("Connected to WSS");
         };
+
         socket.onclose = function(event) {
           alert("closed code:" + event.code + " reason:" +event.reason + " wasClean:"+event.wasClean);
         };
+
         socket.onmessage = function(event) {
           var o=JSON.parse(event.data);
+          switch(o.command){
+            case "INIT":
+	      board = o.payload.board;
+	      for (var i=0; i<board.length; i++) {
+		if (board[i]==0) {
+			continue;
+		}
+		o = getColors(board[i]);
+	  	o.x = parseInt(i%250);
+	  	o.y = parseInt(i/250);
+		colorPixel(o)
+              };
+              console.log("Connected to WSS, Reading Board Data");
+              break;f
+            case "READ":
+	      console.log(o.payload);
+	      colorPixel(o.payload.payload);
+              console.log("New data to read");
+              break;
+            case "ERROR":
+              console.log("Error writing to socket, maybe invalid input?");
+              break;
+            default:
+              console.log("Default Command Case");
+              break;
+          }
 
-          var context = document.getElementById('canvas').getContext('2d');
-          context.fillStyle = 'rgb('+o.r+','+o.g+','+o.b+')';
-          context.fillRect(o.x, o.y, 1, 1);
         }
 
         // Comment out the event handler below when in production
-        $('#canvas').mousemove(function(event){
-          var x=event.pageX-this.offsetLeft;
-          var y=event.pageY-this.offsetTop;
-          var o = { 'x': x, 'y': y, 'r': 0, 'g':0, 'b':0 };
-          socket.send(JSON.stringify(o));
-        });
+        // $('#canvas').mousemove(function(event){
+        //   var x=event.pageX-this.offsetLeft;
+        //   var y=event.pageY-this.offsetTop;
+        //   var o = { 'x': x, 'y': y, 'r': 0, 'g':0, 'b':0 };
+        //   socket.send(JSON.stringify(o));
+        // });
         $('#setForm').submit(function( event ) {
           var o = { 'x': $('#x').val(), 
             'y': $('#y').val(), 
             'r':$('#r').val(), 
             'g':$('#g').val(), 
             'b':$('#b').val()};
-
-          for(var key in o){
-            o[key]=parseInt(o[key]);
-          }
-          socket.send(JSON.stringify(o));
+	  colNum = rgbToNum(o.r, o.g, o.b)
+	  o = getColors(colNum);
+	  o.x = $("#x").val();
+	  o.y = $("#y").val();
+	  o.num = colNum;
+	  console.log(o);
+	  colorPixel(o);
+          console.log("Coloring");  
+	  send(socket, "WRITE", o);
             event.preventDefault();
         });
       });
@@ -79,9 +139,9 @@
 		(<input type="number" id="x" placeholder="x" min="0" max="250">,
 		<input type="number" id="y" placeholder="y" min="0" max="250">)
 		&nbsp; &nbsp; &nbsp;
-		(<input type="number" id="r" placeholder="r" min="0" max="255">,
-		<input type="number"  id="g" placeholder="g" min="0" max="255">,
-		<input type="number"  id="b" placeholder="b" min="0" max="255">)
+		(<input type="number" id="r" placeholder="r" min="0" max="3">,
+		<input type="number"  id="g" placeholder="g" min="0" max="3">,
+		<input type="number"  id="b" placeholder="b" min="0" max="3">)
 		&nbsp; &nbsp; &nbsp;
 		<input type="submit" name="set" value="set"/>
 	</form>
