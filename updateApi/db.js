@@ -1,5 +1,7 @@
+// https://node-postgres.com/
 require('log-timestamp');
 const { Pool, Client } = require('pg');
+
 const pool = new Pool({
     user: 'postgres',
     host: 'r-place-1.cg7a8becuhbz.us-east-2.rds.amazonaws.com',
