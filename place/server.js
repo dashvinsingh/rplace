@@ -140,22 +140,24 @@ var app = express();
 app.use('/',express.static('static_files')); // this directory has files to be returned
 
 
-// Code to handle session functionality: made using https://glebbahmutov.com/blog/express-sessions/
+// Session stuff taken from: https://glebbahmutov.com/blog/express-sessions/
+app.use(require('morgan')('dev'));
 const session = require('express-session');
-const FileStore = require('session-file-store')(session)
+const FileStore = require('session-file-store')(session);
 
 app.use(session({
-	name: 'server-session-cookie-id',
-	secret: 'session secret',
-	saveUninitialized: true,
-	resave: true,
-	store: new FileStore()
+  name: 'server-session-cookie-id',
+  secret: 'my express secret',
+  saveUninitialized: true,
+  resave: true,
+  store: new FileStore()
 }));
+
 
 app.use(function printSession(req, res, next) {
 	console.log('req.session', req.session);
 	return next();
-  });
+});
 
 
 

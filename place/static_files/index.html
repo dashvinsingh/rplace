@@ -1,150 +1,234 @@
 <!doctype html>
 <html lang="en"> 
-  <head>
-    <meta charset="UTF-8" />
-	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-	<meta http-equiv="Pragma" content="no-cache" />
-	<meta http-equiv="Expires" content="0" />
+	<head>
+		<meta charset="UTF-8" />
+  	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  	<meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
 
-    <title>r/place clone</title>
+		<title>r/place clone</title>
 
-    <script src="jquery-3.1.1.min.js"></script>
-    <script type="text/javascript">
-  
-    function send(ws, command, payload) {
-      ws.send(JSON.stringify({command: command, payload: payload}))
-    }
-
-    
-    function colorPixel(o) {
-	 var context = document.getElementById('canvas').getContext('2d');
-	 context.fillStyle = 'rgb('+o.r+','+o.g+','+o.b+')';
-         context.fillRect(o.x, o.y, 3, 3);
-    }
-
-    function getColors(num) {
-    	//given a 8 bit integer with max value 127 (i.e. 7 bits)
-	//bits r: 0-1, g:2-3, b: 4-5
-	var r = num & 3
-	var g = num >> 2 & 3
-	var b = num >> 4 & 3
-
-	//dividing 255/4 cus each bit can represent 4 value, so final rgb is r/g/b + 1 * 63
-	//return [r , g , b]
-	return {"r": (r) * 85, "g": (g) * 85, "b": (b) * 85}
-    }
-
-    function rgbToNum(r, g, b) {
-    	// r, g, b can range from 1 to 4
-	var num = 0 | (r)
-	num |= (g) << 2
-	num |= (b) << 4
-	return num 
-    }
-
-      var socket;
-
-      $(function() {
-
-        socket = new WebSocket("ws://"+window.location.hostname+":8081");
-
-        socket.onopen = function (event) {
-          $('#sendButton').removeAttr('disabled');
-          console.log("Connected to WSS");
-        };
-
-        socket.onclose = function(event) {
-          alert("closed code:" + event.code + " reason:" +event.reason + " wasClean:"+event.wasClean);
-        };
-
-        socket.onmessage = function(event) {
-          var o=JSON.parse(event.data);
-          switch(o.command){
-            case "INIT":
-	      board = o.payload.board;
-	      for (var i=0; i<board.length; i++) {
-		if (board[i]==0) {
-			continue;
-		}
-		o = getColors(board[i]);
-	  	o.x = parseInt(i%250);
-	  	o.y = parseInt(i/250);
-		colorPixel(o)
-              };
-              console.log("Connected to WSS, Reading Board Data");
-              break;f
-            case "READ":
-	      console.log(o.payload);
-	      colorPixel(o.payload.payload);
-              console.log("New data to read");
-              break;
-            case "ERROR":
-              console.log("Error writing to socket, maybe invalid input?");
-              break;
-            default:
-              console.log("Default Command Case");
-              break;
-          }
-
-        }
-
-        // Comment out the event handler below when in production
-        // $('#canvas').mousemove(function(event){
-        //   var x=event.pageX-this.offsetLeft;
-        //   var y=event.pageY-this.offsetTop;
-        //   var o = { 'x': x, 'y': y, 'r': 0, 'g':0, 'b':0 };
-        //   socket.send(JSON.stringify(o));
-        // });
-        $('#setForm').submit(function( event ) {
-          var o = { 'x': $('#x').val(), 
-            'y': $('#y').val(), 
-            'r':$('#r').val(), 
-            'g':$('#g').val(), 
-            'b':$('#b').val()};
-	  colNum = rgbToNum(o.r, o.g, o.b)
-	  o = getColors(colNum);
-	  o.x = $("#x").val();
-	  o.y = $("#y").val();
-	  o.num = colNum;
-	  console.log(o);
-	  colorPixel(o);
-          console.log("Coloring");  
-	  send(socket, "WRITE", o);
-            event.preventDefault();
-        });
-      });
-	</script>
+		<script src="jquery-3.1.1.min.js"></script>
+		<script type="text/javascript">
 	
-    <style>
-		body {
-			text-align: center;
-			align: center;
-			overflow: hidden;
-			margin: 0px;
-			padding: 0px;
-		}
-		canvas {
-			border: 1px solid black;
-		}
-		input[type=number]{ width: 3em; }
-	</style>
-  </head>
-  <body>
-    <h1>r/place clone</h1>
+			var socket;
 
-    <h1>MADE A CHANGE</h1>
+			$(function() {
 
-    <canvas id="canvas" width="250" height="250" ></canvas>
-    <form id="setForm">
-		(<input type="number" id="x" placeholder="x" min="0" max="250">,
-		<input type="number" id="y" placeholder="y" min="0" max="250">)
-		&nbsp; &nbsp; &nbsp;
-		(<input type="number" id="r" placeholder="r" min="0" max="3">,
-		<input type="number"  id="g" placeholder="g" min="0" max="3">,
-		<input type="number"  id="b" placeholder="b" min="0" max="3">)
-		&nbsp; &nbsp; &nbsp;
-		<input type="submit" name="set" value="set"/>
-	</form>
-  </body>
+				// Websocket connections
+				socket = new WebSocket("ws://"+window.location.hostname+":8081");
+				socket.onopen = function (event) {
+					$('#sendButton').removeAttr('disabled');
+					console.log("connected");
+				};
+				socket.onclose = function (event) {
+					alert("closed code:" + event.code + " reason:" +event.reason + " wasClean:"+event.wasClean);
+				};
+				socket.onmessage = function (event) {
+					var o=JSON.parse(event.data);
+
+					var context = document.getElementById('canvas').getContext('2d');
+					context.fillStyle = 'rgb('+o.r+','+o.g+','+o.b+')';
+		   		context.fillRect(o.x, o.y, 2, 2);
+				}
+
+				// Comment out the event handler below when in production
+				$('#canvas').mousemove(function(event){
+					var x=event.pageX-this.offsetLeft;
+					var y=event.pageY-this.offsetTop;
+					var o = { 'x': x, 'y': y, 'r': colour.r, 'g': colour.g, 'b': colour.b };
+					socket.send(JSON.stringify(o));
+
+					// // Send binary data
+					// var context = document.getElementById('canvas').getContext('2d');
+					// var data = context.getImageData(x, y, 1, 1).data;
+					// var byteArray = new Uint8Array(data);
+					// socket.send(byteArray.buffer);
+				});
+
+				// Submit the pixel change
+				$('#setForm').submit(function( event ) {
+					var o = { 
+						'x': $('#x').val(), 
+						'y': $('#y').val(), 
+						'r': colour.r,
+						'g': colour.g,
+						'b': colour.b
+					}
+
+					for(var key in o){
+						o[key]=parseInt(o[key]);
+					}
+					socket.send(JSON.stringify(o));
+  					event.preventDefault();
+				});
+				
+			});
+
+			var colourMapping = {
+					0: { 'r': 0, 'g': 0, 'b': 0 },
+					1: { 'r': 128, 'g': 128, 'b': 128 },
+					2: { 'r': 211, 'g': 211, 'b': 211 },
+					3: { 'r': 255, 'g': 255, 'b': 255 },
+					4: { 'r': 54, 'g': 52, 'b': 163 },
+					5: { 'r': 137, 'g': 68, 'b': 171 },
+					6: { 'r': 0, 'g': 64, 'b': 221 },
+					7: { 'r': 112, 'g': 215, 'b': 255 },
+					8: { 'r': 215, 'g': 0, 'b': 21 },
+					9: { 'r': 255, 'g': 100, 'b': 130 },
+					10: { 'r': 255, 'g': 179, 'b': 64 },
+					11: { 'r': 255, 'g': 212, 'b': 38 },
+					12: { 'r': 165, 'g': 42, 'b': 42 },
+					13: { 'r': 36, 'g': 128, 'b': 61 },
+					14: { 'r': 48, 'g': 219, 'b': 91 },
+					15: { 'r': 210, 'g': 184, 'b': 140 }
+				}
+			
+			var colour = { 'r': 255, 'g': 255, 'b': 255 }
+
+			function changeColour(id) {
+					colour = colourMapping[id];
+					$("#colourbox").removeClass();
+					$("#colourbox").addClass('c' + id);
+				}
+	
+		</script>
+
+		<style>
+      body {
+				text-align: center;
+				align: center;
+				overflow: hidden;
+				margin: 0px;
+				padding: 0px;
+			}
+
+			canvas {
+				border: 1px solid black;
+			}
+
+			input[type=number]{ 
+				width: 3em; 
+			}
+
+			#colourmenu {
+				align-self: center;
+			}
+
+			#colourbox {
+				height: 30px;
+				width: 30px;
+				border: 2px solid rgb(0, 0, 0);
+				display: inline-block;
+			}
+
+			.c0 {background-color: rgb(0, 0, 0);}
+			.c1 {background-color: rgb(128, 128, 128);}
+			.c2 {background-color: rgb(211, 211, 211);}
+			.c3 {background-color: rgb(255, 255, 255);}
+
+			.c4 {background-color: rgb(54, 52, 163);}
+			.c5 {background-color: rgb(137, 68, 171);}
+			.c6 {background-color: rgb(0, 64, 221);}
+			.c7 {background-color: rgb(112, 215, 255);}
+
+			.c8 {background-color: rgb(215, 0, 21);}
+			.c9 {background-color: rgb(255, 100, 130);}
+			.c10 {background-color: rgb(255, 179, 64);}
+			.c11 {background-color: rgb(255, 212, 38);}
+
+			.c12 {background-color: rgb(165, 42, 42);}
+			.c13 {background-color: rgb(36, 138, 61);}
+			.c14 {background-color: rgb(48, 219, 91);}
+			.c15 {background-color: rgb(210, 184, 140);}
+
+			#palette {
+				align-self: center;
+				border: 1px solid red;
+				margin: 0 auto;
+				padding: 0px
+			}
+
+			#palette tr, td {
+  			padding: 0px;
+			}
+
+			#palette button {
+				height: 50px;
+				width: 50px;
+				border: none;
+				border: 2px solid transparent;
+			}
+
+			#palette button:hover {
+				cursor: pointer;
+				border: 2px solid rgba(0, 0, 0, 0.5);
+			}
+
+			#c0 {background-color: rgb(0, 0, 0);}
+			#c1 {background-color: rgb(128, 128, 128);}
+			#c2 {background-color: rgb(211, 211, 211);}
+			#c3 {background-color: rgb(255, 255, 255);}
+
+			#c4 {background-color: rgb(54, 52, 163);}
+			#c5 {background-color: rgb(137, 68, 171);}
+			#c6 {background-color: rgb(0, 64, 221);}
+			#c7 {background-color: rgb(112, 215, 255);}
+
+			#c8 {background-color: rgb(215, 0, 21);}
+			#c9 {background-color: rgb(255, 100, 130);}
+			#c10 {background-color: rgb(255, 179, 64);}
+			#c11 {background-color: rgb(255, 212, 38);}
+
+			#c12 {background-color: rgb(165, 42, 42);}
+			#c13 {background-color: rgb(36, 138, 61);}
+			#c14 {background-color: rgb(48, 219, 91);}
+			#c15 {background-color: rgb(210, 184, 140);}
+
+		</style>
+	</head>
+	<body>
+		<h1>r/place clone</h1>
+
+		<canvas id="canvas" width="500" height="500" ></canvas>
+		<form id="setForm">
+			(<input type="number" id="x" placeholder="x" min="0" max="500">,
+			<input type="number" id="y" placeholder="y" min="0" max="500">)
+			&nbsp; &nbsp; &nbsp;
+			<input type="submit" name="set" value="set"/>
+		</form>
+
+		<div id="colourmenu">
+			<h3>Pick a colour:</h3>
+			<span id="colourbox"></span>
+		</div>
+
+		<div>
+			<table id="palette" cellspacing="0">
+				<tr>
+					<td><button id="c0" value="Inset Border" style="border-style:inset;" onclick="changeColour(0)"></button></td>
+					<td><button id="c1" value="Inset Border" style="border-style:inset;" onclick="changeColour(1)"></button></td>
+					<td><button id="c2" value="Inset Border" style="border-style:inset;" onclick="changeColour(2)"></button></td>
+					<td><button id="c3" value="Inset Border" style="border-style:inset;" onclick="changeColour(3)"></button></td>
+					<td><button id="c4" value="Inset Border" style="border-style:inset;" onclick="changeColour(4)"></button></td>
+					<td><button id="c5" value="Inset Border" style="border-style:inset;" onclick="changeColour(5)"></button></td>
+					<td><button id="c6" value="Inset Border" style="border-style:inset;" onclick="changeColour(6)"></button></td>
+					<td><button id="c7" value="Inset Border" style="border-style:inset;" onclick="changeColour(7)"></button></td>
+				</tr>
+				<tr>
+					<td><button id="c8" value="Inset Border" style="border-style:inset;" onclick="changeColour(8)"></button></td>
+					<td><button id="c9" value="Inset Border" style="border-style:inset;" onclick="changeColour(9)"></button></td>
+					<td><button id="c10" value="Inset Border" style="border-style:inset;" onclick="changeColour(10)"></button></td>
+					<td><button id="c11" value="Inset Border" style="border-style:inset;" onclick="changeColour(11)"></button></td>
+					<td><button id="c12" value="Inset Border" style="border-style:inset;" onclick="changeColour(12)"></button></td>
+					<td><button id="c13" value="Inset Border" style="border-style:inset;" onclick="changeColour(13)"></button></td>
+					<td><button id="c14" value="Inset Border" style="border-style:inset;" onclick="changeColour(14)"></button></td>
+					<td><button id="c15" value="Inset Border" style="border-style:inset;" onclick="changeColour(15)"></button></td>
+				</tr>
+			</table>
+		</div>
+
+
+
+	</body>
 </html>
-
