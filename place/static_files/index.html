@@ -13,37 +13,61 @@
 	
 			var socket;
 
+			// Hoist these functions on load
 			$(function() {
 
-				// Websocket connections
-				socket = new WebSocket("ws://"+window.location.hostname+":8081");
-				socket.onopen = function (event) {
+				// Make a socket connection to 8081
+				socket = new WebSocket("ws://" + window.location.hostname + ":8081");
+
+				// Don't know what this is for honestly
+				socket.onopen = function(event) {
 					$('#sendButton').removeAttr('disabled');
 					console.log("connected");
 				};
-				socket.onclose = function (event) {
+
+				// Get some info on how the socket connection was closed
+				socket.onclose = function(event) {
 					alert("closed code:" + event.code + " reason:" +event.reason + " wasClean:"+event.wasClean);
 				};
-				socket.onmessage = function (event) {
-					var o=JSON.parse(event.data);
 
+				// Get updates from the board
+				// Need to translate binary data into usable data
+				socket.onmessage = function(message) {
+				
+					// var pixelBuffer = new Uint8ClampedArray(message.data);
+
+					// // Need a way to differentiate between 1 pixel update and the whole board
+					// Maybe we can have this length stored in the message
+					// var imageData = new ImageData(pixelBuffer, ??)
+
+					// var context = document.getElementById('canvas').getContext('2d');
+					// var imageData = context.getImageData(0, 0, 500, 500);
+
+
+
+
+					var o=JSON.parse(event.data);
 					var context = document.getElementById('canvas').getContext('2d');
 					context.fillStyle = 'rgb('+o.r+','+o.g+','+o.b+')';
 		   		context.fillRect(o.x, o.y, 2, 2);
 				}
 
-				// Comment out the event handler below when in production
+				// Auto-send any mouse movement over the board to the server
+				// May comment this out later
 				$('#canvas').mousemove(function(event){
-					var x=event.pageX-this.offsetLeft;
-					var y=event.pageY-this.offsetTop;
+					var x = event.pageX-this.offsetLeft;
+					var y = event.pageY-this.offsetTop;
+
+					// Binary buffer to send to the server
+					// index 0 & 1 => x and y, 2 => colour code
+					// var update = new Uint8Array(3);
+					// update[0] = parseInt(x);
+					// update[1] = parseInt(y);
+					// update[2] = code;
+					// socket.send(update.buffer);
+
 					var o = { 'x': x, 'y': y, 'r': colour.r, 'g': colour.g, 'b': colour.b };
 					socket.send(JSON.stringify(o));
-
-					// // Send binary data
-					// var context = document.getElementById('canvas').getContext('2d');
-					// var data = context.getImageData(x, y, 1, 1).data;
-					// var byteArray = new Uint8Array(data);
-					// socket.send(byteArray.buffer);
 				});
 
 				// Submit the pixel change
@@ -60,11 +84,12 @@
 						o[key]=parseInt(o[key]);
 					}
 					socket.send(JSON.stringify(o));
-  					event.preventDefault();
+  				event.preventDefault();
 				});
 				
 			});
 
+			// Mapping from 16 colours to rgb values
 			var colourMapping = {
 					0: { 'r': 0, 'g': 0, 'b': 0 },
 					1: { 'r': 128, 'g': 128, 'b': 128 },
@@ -84,9 +109,13 @@
 					15: { 'r': 210, 'g': 184, 'b': 140 }
 				}
 			
+			// Store the current selected colour
 			var colour = { 'r': 255, 'g': 255, 'b': 255 }
-
+			var code = 3;
+			
+			// Let users know what colour they have selected
 			function changeColour(id) {
+					code = id;
 					colour = colourMapping[id];
 					$("#colourbox").removeClass();
 					$("#colourbox").addClass('c' + id);
