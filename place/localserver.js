@@ -1,7 +1,12 @@
 // Constants
-const HTTP_PORT = process.argv[2] || 8080;
+const VERBOSE = process.argv[2] || false;
+const HTTP_PORT = process.argv[3] || 8080;
 const WS_PORT = parseInt(HTTP_PORT) + 1;
 const DIM = 250;
+
+// Redis
+// var redis = require("redis");
+// const redisClient = redis.createClient();
 
 // Websockets
 const WebSocket = require('ws');
@@ -33,9 +38,11 @@ board.fill(3);
 
 // Log when a client disconnects
 wss.on('close', () => {
-  console.log("\n--------------------------");
-  console.log("DISCONNECTED FROM CLIENT");
-  console.log("--------------------------\n");
+	if (VERBOSE) {
+		console.log("\n--------------------------");
+		console.log("DISCONNECTED FROM CLIENT");
+		console.log("--------------------------\n");
+	}
 });
 
 // Broadcast to all connected clients
@@ -75,9 +82,11 @@ function validUpdate(x, y, colour) {
 
 // On a new client connection
 wss.on('connection', function(ws) {
-  console.log("\n++++++++++++++++++++++++");
-  console.log("New client connection");
-  console.log("++++++++++++++++++++++++\n");
+	if (VERBOSE) {
+		console.log("\n++++++++++++++++++++++++");
+		console.log("New client connection");
+		console.log("++++++++++++++++++++++++\n");
+	}
 
   // Heartbeat
   ws.isAlive = true;
@@ -112,14 +121,18 @@ wss.on('connection', function(ws) {
 		let y = buffer[1];
 		let colour = buffer[3];
 
-    console.log("\n+++++++++++++++++++++++++++++++++++++++");
-    console.log("Got a new message:", x, y, colour);
-    console.log("+++++++++++++++++++++++++++++++++++++++\n");
-    
+		if (VERBOSE) {
+			console.log("\n+++++++++++++++++++++++++++++++++++++++");
+			console.log("Got a new message:", x, y, colour);
+			console.log("+++++++++++++++++++++++++++++++++++++++\n");
+		}
+
 		if (validUpdate(x, y, colour)) {
-			console.log("\n*********************************************");
-			console.log("Updating pixel at ("+x +","+y+") to colour:", colour);
-			console.log("*********************************************\n");
+			if (VERBOSE) {
+				console.log("\n*********************************************");
+				console.log("Updating pixel at ("+x +","+y+") to colour:", colour);
+				console.log("*********************************************\n");
+			}
 
 			// Broadcast this update to each client and store it in the board
 			wss.broadcast(message);
@@ -146,9 +159,11 @@ let app = express();
 app.use('/',express.static('static_files')); // this directory has files to be returned
 
 app.listen(HTTP_PORT, () => {
-  console.log("\n========================================");
-  console.log('Example app listening on port:', HTTP_PORT);
-  console.log("========================================\n");
+	if (VERBOSE) {
+		console.log("\n========================================");
+		console.log('Example app listening on port:', HTTP_PORT);
+		console.log("========================================\n");
+	}
 });
 
 // To DO:
