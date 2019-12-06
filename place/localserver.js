@@ -6,7 +6,26 @@ const DIM = 250;
 // Websockets
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: WS_PORT });
- 
+
+// Redis Client
+const redis = require("redis")
+const redis_host = "redis://r-place-redis-cache-001.tjlnvm.0001.use2.cache.amazonaws.com";
+
+//###Redis Error Handling to be Done.
+const options = {return_buffer: true, retry_strategy:  function(options) {
+	if (options.attempt > 3) {
+		return Error("Unable to connect to redis!");
+	}
+}}
+const redisClient = redis.createClient(redis_host, options);
+redisClient.on('error', function (err) {
+    assert(err instanceof Error);
+    assert(err instanceof redis.AbortError);
+    assert(err instanceof redis.AggregateError);
+    // The set and get get aggregated in here
+    console.log("Unable to connect to redis.");
+});
+
 // Set up the board as flat array, each pixel is 1 unsigned integer
 // 3 maps to white, the board will be all white to begin
 let board = new Uint8Array(DIM*DIM); 
@@ -21,13 +40,15 @@ wss.on('close', () => {
 
 // Broadcast to all connected clients
 wss.broadcast = function broadcast(data) {
+	console.log("->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->");
+	console.log("Broadcasting message:", data)
+	console.log("->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->");
   wss.clients.forEach(function each(client) {
     if (client.readyState === WebSocket.OPEN) {
-      console.log("->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->");
-      console.log("Sending message:", data)
-      console.log("->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->");
       client.send(data);
-    }
+    } else {
+		console.log("===ERROR: Unable to broadcast, socket state: " + client.readyState);
+	}
   });
 };
 
@@ -67,8 +88,22 @@ wss.on('connection', function(ws) {
 	boardInfo[0] = 0;
 	boardInfo[1] = 0;
 	boardInfo[2] = DIM;
-	boardInfo.set(board, 3);
-	ws.send(boardInfo);
+
+
+	//Make connection to redis and send the board back to the clients.
+	const redisKey = "board";
+	redisClient.send_command("GET", [redisKey], function(err, reply) {
+		if (err) {console.log("Unable to GET board from Redis. " + err);};
+		if (reply) {
+				console.log(`REDIS GET ${redisKey}, Size: ${reply.length}`);
+				// send(ws, "INIT", {board: readBytes(reply)});
+				// ws.send(replay);
+				boardInfo.set(reply, 3);
+				ws.send(boardInfo);
+		}
+	})
+	// boardInfo.set(board, 3);
+	// ws.send(boardInfo);
 	
 	// On a client update, broadcast that update to all clients
 	ws.on('message', function(message) {
