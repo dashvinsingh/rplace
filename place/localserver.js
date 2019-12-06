@@ -1,7 +1,7 @@
 // Constants
 const VERBOSE = process.argv[2] || false;
 const HTTP_PORT = process.argv[3] || 8080;
-const WS_PORT = process.argv[4] || 8081;
+const WS_PORT = parseInt(HTTP_PORT) + 1;
 const DIM = 250;
 
 // Redis

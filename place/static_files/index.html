@@ -16,8 +16,10 @@
 			// Hoist these functions on load
 			$(function() {
 
-				// Make a socket connection to 8081
-				socket = new WebSocket("ws://" + window.location.hostname + ":8081");
+        // Make a socket connection to 8081
+        port = parseInt(window.location.port) + 1;
+        console.log(port);
+				socket = new WebSocket("ws://" + window.location.hostname + ":" + port);
 
 				// Don't know what this is for honestly
 				socket.onopen = function(event) {
