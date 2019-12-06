@@ -1,2 +1,2 @@
-node_modules/*
-sessions/*
+*node_modules/*
+*sessions/*
