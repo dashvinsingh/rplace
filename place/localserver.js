@@ -79,7 +79,7 @@ wss.on('connection', function(ws) {
 	boardInfo[0] = 0;
 	boardInfo[1] = 0;
 	boardInfo[2] = DIM;
-	boardInfo.set(board, 3);
+	boardInfo.set(board, 0);
 	ws.send(boardInfo);
 	
 	// On a client update, broadcast that update to all clients
