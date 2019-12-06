@@ -51,7 +51,7 @@
 					console.log("===========RECEIVED===============");
 
 					// Make an array with RGB values for each colour code
-					let colours = new Uint8ClampedArray(codes.length * 4);
+					colours = new Uint8ClampedArray(codes.length * 4);
 					let j = 0;
 					for (let i = 0; i < colours.length; i += 4) {
 						let rgb = colourMap[codes[j]];

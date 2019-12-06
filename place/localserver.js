@@ -121,8 +121,8 @@ wss.on('connection', function(ws) {
 			console.log("*********************************************\n");
 
 			// Broadcast this update to each client and store it in the board
-			console.log("New data to write from user " + "{DUMMY}");
-			var index = x + (DIM * y);
+			index = x + (DIM * y);
+			console.log("New data to write from user " + index + " " + colour);
 
 			redisClient.send_command("BITFIELD", [redisKey, "SET", "u8", `#${index}`, colour], function(err, reply) {
 					if (err) console.log(err);
