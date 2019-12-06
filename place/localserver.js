@@ -121,16 +121,21 @@ wss.on('connection', function(ws) {
 			console.log("*********************************************\n");
 
 			// Broadcast this update to each client and store it in the board
-			console.log("New data to write from user " + o.payload.user);
-				redisClient.send_command("BITFIELD", [redisKey, "SET", "u8", `#${offset}`, value], function(err, reply) {
-        				if (err) console.log(err);
+			console.log("New data to write from user " + "{DUMMY}");
+			var index = x + (DIM * y);
+
+			redisClient.send_command("BITFIELD", [redisKey, "SET", "u8", `#${index}`, colour], function(err, reply) {
+					if (err) console.log(err);
+					if (reply) {
+						console.log("REDIS Write successful");
 						console.log(reply);
-						
+					
 						//broadcast writes to users.
-						wss.broadcast(message);
-						index = x + (DIM * y);
 						board[index] = colour;	
-				});	
+						wss.broadcast(message);
+					}
+					
+			});	
 			
 		}
 	});
