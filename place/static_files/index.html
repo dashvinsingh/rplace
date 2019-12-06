@@ -12,6 +12,36 @@
 		<script type="text/javascript">
 	
 			var socket;
+			var clicked = false;
+			var colourMap = {
+				0: [0, 0, 0],
+				1: [128, 128, 128],
+				2: [211, 211, 211],
+				3: [255, 255, 255],
+				4: [54, 52, 163],
+				5: [137, 68, 221],
+				6: [0, 64, 221],
+				7: [112, 215, 255],
+				8: [215, 0, 21],
+				9: [255, 100, 130],
+				10: [255, 179, 64],
+				11: [255, 212, 38],
+				12: [165, 42, 42],
+				13: [36, 128, 61],
+				14: [48, 219, 91],
+				15: [210, 184, 140]
+			}
+			
+			// Store the current selected colour
+			var colour = { 'r': 255, 'g': 255, 'b': 255 }
+			var code = 3;
+			
+			// Let users know what colour they have selected
+			function changeColour(id) {
+				code = id;
+				$("#colourbox").removeClass();
+				$("#colourbox").addClass('c' + id);
+			}
 
 			// Hoist these functions on load
 			$(function() {
@@ -75,20 +105,33 @@
 				$('#canvas').mousemove(function(event){
 
 					// Change the x and y values as you move around the canvas
-					var x = event.pageX-this.offsetLeft;
-					var y = event.pageY-this.offsetTop;
+					// var x = event.pageX-this.offsetLeft;
+					// var y = event.pageY-this.offsetTop;
+					// console.log("(x,y) =", x, y);
+					// if (!clicked) {
+					// 	$('#x').val(x);
+					// 	$('#y').val(y);
+					// }
 
 					// Binary buffer to send to the server
 					// index 0 & 1 => x and y, 2 => pixels changed 3 => colour code
-					var update = new Uint8Array(4);
-					update[0] = parseInt(x);
-					update[1] = parseInt(y);
-					update[2] = 1;
-					update[3] = code;
-					console.log("==============SENDING================");
-					console.log("x, y, num, code =", update[0], update[1], update[2], update[3]);
-					console.log("==============SENT===================");
-					socket.send(update.buffer);
+					// var update = new Uint8Array(4);
+					// update[0] = parseInt(x);
+					// update[1] = parseInt(y);
+					// update[2] = 1;
+					// update[3] = code;
+					// console.log("==============SENDING================");
+					// console.log("x, y, num, code =", update[0], update[1], update[2], update[3]);
+					// console.log("==============SENT===================");
+					// socket.send(update.buffer);
+				});
+
+				// On a click, change the x and y values
+				$('#canvas').click(function(event) {
+					var x = event.pageX-this.offsetLeft;
+					var y = event.pageY-this.offsetTop;
+					$('#x').val(x);
+					$('#y').val(y);
 				});
 
 				// Submit the pixel change
@@ -114,54 +157,26 @@
 			});
 
 			// Mapping from 16 colours to rgb values
-			var colourMapping = {
-				0: { 'r': 0, 'g': 0, 'b': 0 },
-				1: { 'r': 128, 'g': 128, 'b': 128 },
-				2: { 'r': 211, 'g': 211, 'b': 211 },
-				3: { 'r': 255, 'g': 255, 'b': 255 },
-				4: { 'r': 54, 'g': 52, 'b': 163 },
-				5: { 'r': 137, 'g': 68, 'b': 171 },
-				6: { 'r': 0, 'g': 64, 'b': 221 },
-				7: { 'r': 112, 'g': 215, 'b': 255 },
-				8: { 'r': 215, 'g': 0, 'b': 21 },
-				9: { 'r': 255, 'g': 100, 'b': 130 },
-				10: { 'r': 255, 'g': 179, 'b': 64 },
-				11: { 'r': 255, 'g': 212, 'b': 38 },
-				12: { 'r': 165, 'g': 42, 'b': 42 },
-				13: { 'r': 36, 'g': 128, 'b': 61 },
-				14: { 'r': 48, 'g': 219, 'b': 91 },
-				15: { 'r': 210, 'g': 184, 'b': 140 }
-			}
+			// var colourMapping = {
+			// 	0: { 'r': 0, 'g': 0, 'b': 0 },
+			// 	1: { 'r': 128, 'g': 128, 'b': 128 },
+			// 	2: { 'r': 211, 'g': 211, 'b': 211 },
+			// 	3: { 'r': 255, 'g': 255, 'b': 255 },
+			// 	4: { 'r': 54, 'g': 52, 'b': 163 },
+			// 	5: { 'r': 137, 'g': 68, 'b': 171 },
+			// 	6: { 'r': 0, 'g': 64, 'b': 221 },
+			// 	7: { 'r': 112, 'g': 215, 'b': 255 },
+			// 	8: { 'r': 215, 'g': 0, 'b': 21 },
+			// 	9: { 'r': 255, 'g': 100, 'b': 130 },
+			// 	10: { 'r': 255, 'g': 179, 'b': 64 },
+			// 	11: { 'r': 255, 'g': 212, 'b': 38 },
+			// 	12: { 'r': 165, 'g': 42, 'b': 42 },
+			// 	13: { 'r': 36, 'g': 128, 'b': 61 },
+			// 	14: { 'r': 48, 'g': 219, 'b': 91 },
+			// 	15: { 'r': 210, 'g': 184, 'b': 140 }
+			// }
 
-			var colourMap = {
-				0: [0, 0, 0],
-				1: [128, 128, 128],
-				2: [211, 211, 211],
-				3: [255, 255, 255],
-				4: [54, 52, 163],
-				5: [137, 68, 221],
-				6: [0, 64, 221],
-				7: [112, 215, 255],
-				8: [215, 0, 21],
-				9: [255, 100, 130],
-				10: [255, 179, 64],
-				11: [255, 212, 38],
-				12: [165, 42, 42],
-				13: [36, 128, 61],
-				14: [48, 219, 91],
-				15: [210, 184, 140]
-			}
 			
-			// Store the current selected colour
-			var colour = { 'r': 255, 'g': 255, 'b': 255 }
-			var code = 3;
-			
-			// Let users know what colour they have selected
-			function changeColour(id) {
-				code = id;
-				$("#colourbox").removeClass();
-				$("#colourbox").addClass('c' + id);
-			}
 	
 		</script>
 
