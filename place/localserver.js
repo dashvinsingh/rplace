@@ -1,6 +1,6 @@
 // Constants
 const HTTP_PORT = process.argv[2] || 8080;
-const WS_PORT = process.argv[3] || 8081;
+const WS_PORT = parseInt(HTTP_PORT) + 1;
 const DIM = 250;
 
 // Websockets
