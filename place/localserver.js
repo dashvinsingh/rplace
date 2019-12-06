@@ -96,8 +96,8 @@ wss.on('connection', function(ws) {
 		if (err) {console.log("Unable to GET board from Redis. " + err);};
 		if (reply) {
 				console.log(`REDIS GET ${redisKey}, Size: ${reply.length}`);
-
-				boardInfo.set(reply, 3);
+				console.log(reply[0]);
+				boardInfo.set(Buffer.from(reply), 3);
 				ws.send(boardInfo);
 		}
 	})
@@ -121,9 +121,9 @@ wss.on('connection', function(ws) {
 			console.log("*********************************************\n");
 
 			// Broadcast this update to each client and store it in the board
-			index = x + (DIM * y);
-			console.log("New data to write from user " + index + " " + colour);
-
+			console.log("New data to write from user " + "{DUMMY}");
+			var index = x + (DIM * y);
+		
 			redisClient.send_command("BITFIELD", [redisKey, "SET", "u8", `#${index}`, colour], function(err, reply) {
 					if (err) console.log(err);
 					if (reply) {
