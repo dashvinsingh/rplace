@@ -14,7 +14,7 @@ const wss = new WebSocket.Server({ port: WS_PORT });
 
 // Redis Client
 const redis = require("redis")
-const redis_host = "redis://r-place-redis-cache-001.tjlnvm.0001.use2.cache.amazonaws.com";
+const redis_host = "redis://place.tjlnvm.ng.0001.use2.cache.amazonaws.com";
 
 //###Redis Error Handling to be Done.
 const options = {return_buffer: true, retry_strategy:  function(options) {
