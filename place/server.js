@@ -42,18 +42,16 @@ client.connect(err => {
       console.error('connection error', err.stack)
     } else {
 		if(VERBOSE) {
-			console.log("")
 			console.log("--------------------------");
 			console.log('CONNECTED TO PERSISTENT DB')
 			console.log("--------------------------");
 		}
-      let createCanvas = `CREATE TABLE IF NOT EXISTS Canvas("X" int NOT NULL,"Y" int NOT NULL,"Colour" int NOT NULL,"timestamp" timestamp(6) NOT NULL,Primary KEY ("X", "Y"));`;
+      let createCanvas = `CREATE TABLE IF NOT EXISTS Canvas("Offset" int NOT NULL,"Colour" int NOT NULL,"timestamp" timestamp(6) NOT NULL,Primary KEY ("Offset"));`;
       client.query(createCanvas, function(err, results, fields) {
         if (err) {
           console.log(err.message);
         } else {
 			if(VERBOSE) {
-				console.log("")
 				console.log("--------------------------");
 				console.log("CANVAS TABLE CREATED");
 				console.log("--------------------------");
@@ -67,7 +65,6 @@ client.connect(err => {
           console.log(err.message);
         } else {
 			if(VERBOSE) {
-				console.log("")
 				console.log("--------------------------");
 				console.log("SESSIONS TABLE CREATED");
 				console.log("--------------------------");
@@ -92,7 +89,6 @@ board.fill(3);
 // Log when a client disconnects
 wss.on('close', () => {
 	if (VERBOSE) {
-		console.log("")
 		console.log("--------------------------");
 		console.log("DISCONNECTED FROM CLIENT");
 		console.log("--------------------------");
@@ -138,7 +134,6 @@ function validUpdate(x, y, colour) {
 // On a new client connection
 wss.on('connection', function(ws) {
 	if (VERBOSE) {
-		console.log("")
 		console.log("++++++++++++++++++++++++");
 		console.log("New client connection");
 		console.log("++++++++++++++++++++++++");
@@ -196,6 +191,9 @@ const interval = setInterval(function ping() {
   });
 }, 30000);
 
+// Database
+//const db = require('./db.js');
+
 // Express server for HTTP
 let express = require('express');
 let app = express();
@@ -208,22 +206,38 @@ app.use(session({
 	secret: SECRET,
 }))
 
+let sessList = {};
+
+
 function printSession(req, res, next) {
+	let id = req.session.id;
 	console.log("SESSION:" , req.session.id);
+	if (sessList[id] == null) {
+		sessList[id] = Date.now();
+	} else {
+		let last = sessList[id];
+		let elapsed = Math.floor((Date.now() - last)/1000);
+		if (elapsed < 5) {
+			console.log("timeout!");
+			res.status(400);
+			res.send();
+			return;
+		}
+	}
+	console.log(sessList);
 	next();
 }
 
 // Serve static content
-app.use('/', printSession, express.static('static_files')); // this directory has files to be returned
+app.use(express.static('static_files')); // this directory has files to be returned
 
 // Update endpoint
-app.use('/update', printSession, (req, res) => {
-	
+app.post('/update', printSession, (req, res) => {
+
 })
 
 app.listen(HTTP_PORT, () => {
 	if (VERBOSE) {
-		console.log("")
 		console.log("========================================");
 		console.log('Example app listening on port:', HTTP_PORT);
 		console.log("========================================");

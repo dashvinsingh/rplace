@@ -149,8 +149,24 @@
 					console.log("================SENDING================");
 					console.log("x, y, num, code =", update[0], update[1], update[2], update[3]);
 					console.log("================SENT===================");
-					socket.send(update);
-  				event.preventDefault();
+					// socket.send(update);
+					
+
+					// Ajax POST request
+					$.ajax({
+						method: "POST",
+						url: "/update",
+						data: { user: "bhavjot"}
+
+					}).done(() => {
+						console.log("done");
+
+					}).fail((err) => {
+						alert("Can't submit!");
+					})
+
+					event.preventDefault();
+
 				});
 				
 			});
