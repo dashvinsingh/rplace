@@ -2,11 +2,8 @@
 const VERBOSE = process.argv[2] || false;
 const HTTP_PORT = process.argv[3] || 8080;
 const WS_PORT = parseInt(HTTP_PORT) + 1;
+const SECRET = process.argv[4] || "arnold";
 const DIM = 250;
-
-// Redis
-// var redis = require("redis");
-// const redisClient = redis.createClient();
 
 // Websockets
 const WebSocket = require('ws');
@@ -123,8 +120,21 @@ const interval = setInterval(function ping() {
 let express = require('express');
 let app = express();
 
+// Sessions
+const session = require('express-session');
+app.use(session({
+	resave: false,
+	saveUninitialized: true,
+	secret: SECRET,
+}))
+
+function printSession(req, res, next) {
+	console.log("SESSION:" , req.session);
+	next();
+}
+
 // Serve static content
-app.use('/',express.static('static_files')); // this directory has files to be returned
+app.use('/', printSession, express.static('static_files')); // this directory has files to be returned
 
 app.listen(HTTP_PORT, () => {
 	if (VERBOSE) {
