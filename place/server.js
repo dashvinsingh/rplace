@@ -13,6 +13,11 @@ const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: WS_PORT });
 
 // https://node-postgres.com/
+/*
+-------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------DATABASE--------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------
+*/
 const { Pool, Client } = require('pg');
 
 const pool = new Pool({
@@ -85,6 +90,11 @@ client.connect(err => {
 })
 console.log("Finished connecting");
  
+/*
+-------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------API-----------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------
+*/
 // Set up the board as flat array, each pixel is 1 unsigned integer
 // 3 maps to white, the board will be all white to begin
 let board = new Uint8Array(DIM*DIM); 
@@ -93,7 +103,6 @@ board.fill(3);
 // Log when a client disconnects
 wss.on('close', () => {
 	if (VERBOSE) {
-		console.log("")
 		console.log("--------------------------");
 		console.log("DISCONNECTED FROM CLIENT");
 		console.log("--------------------------");
@@ -139,7 +148,6 @@ function validUpdate(x, y, colour) {
 // On a new client connection
 wss.on('connection', function(ws) {
 	if (VERBOSE) {
-		console.log("")
 		console.log("++++++++++++++++++++++++");
 		console.log("New client connection");
 		console.log("++++++++++++++++++++++++");
@@ -160,20 +168,19 @@ wss.on('connection', function(ws) {
 	// On a client update, broadcast that update to all clients
 	ws.on('message', function(message) {
 		const buffer = Buffer.from(message);
+		let time = Date.now();
 		let x = buffer[0];
 		let y = buffer[1];
 		let colour = buffer[3];
 
 		if (VERBOSE) {
-			console.log("")
 			console.log("+++++++++++++++++++++++++++++++++++++++");
-			console.log("Got a new message:", x, y, colour);
+			console.log("Got a new message:", x, y, colour, time);
 			console.log("+++++++++++++++++++++++++++++++++++++++");
 		}
 
 		if (validUpdate(x, y, colour)) {
 			if (VERBOSE) {
-				console.log("\n")
 				console.log("*********************************************");
 				console.log("Updating pixel at ("+x +","+y+") to colour:", colour);
 				console.log("*********************************************");
@@ -218,6 +225,7 @@ let sessList = {};
 
 function printSession(req, res, next) {
 	let id = req.session.id;
+	console.log("SESSION:" , req.session.id);
 	if (sessList[id] == null) {
 		sessList[id] = Date.now();
 	} else {
@@ -244,7 +252,6 @@ app.post('/update', printSession, (req, res) => {
 
 app.listen(HTTP_PORT, () => {
 	if (VERBOSE) {
-		console.log("")
 		console.log("========================================");
 		console.log('Example app listening on port:', HTTP_PORT);
 		console.log("========================================");
