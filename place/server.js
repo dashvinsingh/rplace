@@ -1,5 +1,8 @@
+require('log-timestamp');
+console.log("Starting server");
+
 // Constants
-const VERBOSE = process.argv[2] || false;
+const VERBOSE = process.argv[2] || true;
 const HTTP_PORT = process.argv[3] || 8080;
 const WS_PORT = parseInt(HTTP_PORT) + 1;
 const SECRET = process.argv[4] || "arnold";
@@ -8,6 +11,68 @@ const DIM = 250;
 // Websockets
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: WS_PORT });
+
+// https://node-postgres.com/
+const { Pool, Client } = require('pg');
+
+const pool = new Pool({
+    user: 'postgres',
+    host: 'r-place-1.cg7a8becuhbz.us-east-2.rds.amazonaws.com',
+    database: 'Canvas',
+    password: 'csc409place',
+    port: 5432
+})
+
+const client = new Client({
+    user: 'postgres',
+    host: 'r-place-1.cg7a8becuhbz.us-east-2.rds.amazonaws.com',
+    database: 'Canvas',
+    password: 'csc409place',
+    port: 5432
+})
+
+console.log("Connecting to persistent storage");
+client.connect(err => {
+    if (err) {
+      console.error('connection error', err.stack)
+    } else {
+		if(VERBOSE) {
+			console.log("")
+			console.log("--------------------------");
+			console.log('CONNECTED TO PERSISTENT DB')
+			console.log("--------------------------");
+		}
+      let createCanvas = `CREATE TABLE IF NOT EXISTS Canvas("X" int NOT NULL,"Y" int NOT NULL,"Colour" int NOT NULL,"timestamp" timestamp(6) NOT NULL,Primary KEY ("X", "Y"));`;
+      client.query(createCanvas, function(err, results, fields) {
+        if (err) {
+          console.log(err.message);
+        } else {
+			if(VERBOSE) {
+				console.log("")
+				console.log("--------------------------");
+				console.log("CANVAS TABLE CREATED");
+				console.log("--------------------------");
+			}
+		}
+	  });
+	  
+	  let createSessions = `CREATE TABLE IF NOT EXISTS Sessions("SessionID" VARCHAR(22)) NOT NULL, timestamp(6) not NULL, Primary Key("SessionID"))`;
+	  client.query(createCanvas, function(err, results, fields) {
+        if (err) {
+          console.log(err.message);
+        } else {
+			if(VERBOSE) {
+				console.log("")
+				console.log("--------------------------");
+				console.log("SESSIONS TABLE CREATED");
+				console.log("--------------------------");
+			}
+		}
+	  });
+
+    }
+})
+console.log("Finished connecting");
  
 // Set up the board as flat array, each pixel is 1 unsigned integer
 // 3 maps to white, the board will be all white to begin
@@ -17,9 +82,10 @@ board.fill(3);
 // Log when a client disconnects
 wss.on('close', () => {
 	if (VERBOSE) {
-		console.log("\n--------------------------");
+		console.log("")
+		console.log("--------------------------");
 		console.log("DISCONNECTED FROM CLIENT");
-		console.log("--------------------------\n");
+		console.log("--------------------------");
 	}
 });
 
@@ -62,9 +128,10 @@ function validUpdate(x, y, colour) {
 // On a new client connection
 wss.on('connection', function(ws) {
 	if (VERBOSE) {
-		console.log("\n++++++++++++++++++++++++");
+		console.log("")
+		console.log("++++++++++++++++++++++++");
 		console.log("New client connection");
-		console.log("++++++++++++++++++++++++\n");
+		console.log("++++++++++++++++++++++++");
 	}
 
   // Heartbeat
@@ -87,16 +154,18 @@ wss.on('connection', function(ws) {
 		let colour = buffer[3];
 
 		if (VERBOSE) {
-			console.log("\n+++++++++++++++++++++++++++++++++++++++");
+			console.log("")
+			console.log("+++++++++++++++++++++++++++++++++++++++");
 			console.log("Got a new message:", x, y, colour);
-			console.log("+++++++++++++++++++++++++++++++++++++++\n");
+			console.log("+++++++++++++++++++++++++++++++++++++++");
 		}
 
 		if (validUpdate(x, y, colour)) {
 			if (VERBOSE) {
-				console.log("\n*********************************************");
+				console.log("\n")
+				console.log("*********************************************");
 				console.log("Updating pixel at ("+x +","+y+") to colour:", colour);
-				console.log("*********************************************\n");
+				console.log("*********************************************");
 			}
 
 			// Broadcast this update to each client and store it in the board
@@ -107,7 +176,9 @@ wss.on('connection', function(ws) {
 	});
 });
 
+
 // Heartbeat (ping) sent to all clients
+
 const interval = setInterval(function ping() {
   wss.clients.forEach(function each(ws) {
     if (ws.isAlive === false) return ws.terminate();
@@ -162,9 +233,10 @@ app.post('/update', printSession, (req, res) => {
 
 app.listen(HTTP_PORT, () => {
 	if (VERBOSE) {
-		console.log("\n========================================");
+		console.log("")
+		console.log("========================================");
 		console.log('Example app listening on port:', HTTP_PORT);
-		console.log("========================================\n");
+		console.log("========================================");
 	}
 });
 

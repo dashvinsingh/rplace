@@ -1,2 +1,6 @@
+
+sessions/
+updateApi/node_modules/
 place/node_modules/*
 place/sessions/*
+
