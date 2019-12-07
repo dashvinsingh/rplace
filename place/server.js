@@ -13,6 +13,11 @@ const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: WS_PORT });
 
 // https://node-postgres.com/
+/*
+-------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------DATABASE--------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------
+*/
 const { Pool, Client } = require('pg');
 
 const pool = new Pool({
@@ -56,7 +61,7 @@ client.connect(err => {
 		}
 	  });
 	  
-	  let createSessions = `CREATE TABLE IF NOT EXISTS Sessions("SessionID" VARCHAR(22)) NOT NULL, timestamp(6) not NULL, Primary Key("SessionID"))`;
+	  let createSessions = `CREATE TABLE IF NOT EXISTS Sessions("SessionID" VARCHAR(22) NOT NULL, "timestamp" timestamp(6) not NULL, Primary Key("SessionID"));`;
 	  client.query(createCanvas, function(err, results, fields) {
         if (err) {
           console.log(err.message);
@@ -74,6 +79,11 @@ client.connect(err => {
 })
 console.log("Finished connecting");
  
+/*
+-------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------API-----------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------
+*/
 // Set up the board as flat array, each pixel is 1 unsigned integer
 // 3 maps to white, the board will be all white to begin
 let board = new Uint8Array(DIM*DIM); 
@@ -149,20 +159,19 @@ wss.on('connection', function(ws) {
 	// On a client update, broadcast that update to all clients
 	ws.on('message', function(message) {
 		const buffer = Buffer.from(message);
+		let time = Date.now();
 		let x = buffer[0];
 		let y = buffer[1];
 		let colour = buffer[3];
 
 		if (VERBOSE) {
-			console.log("")
 			console.log("+++++++++++++++++++++++++++++++++++++++");
-			console.log("Got a new message:", x, y, colour);
+			console.log("Got a new message:", x, y, colour, time);
 			console.log("+++++++++++++++++++++++++++++++++++++++");
 		}
 
 		if (validUpdate(x, y, colour)) {
 			if (VERBOSE) {
-				console.log("\n")
 				console.log("*********************************************");
 				console.log("Updating pixel at ("+x +","+y+") to colour:", colour);
 				console.log("*********************************************");
@@ -200,7 +209,7 @@ app.use(session({
 }))
 
 function printSession(req, res, next) {
-	console.log("SESSION:" , req.session);
+	console.log("SESSION:" , req.session.id);
 	next();
 }
 
@@ -208,7 +217,7 @@ function printSession(req, res, next) {
 app.use('/', printSession, express.static('static_files')); // this directory has files to be returned
 
 // Update endpoint
-app.use('/update', (req, res) => {
+app.use('/update', printSession, (req, res) => {
 	
 })
 
