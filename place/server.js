@@ -133,6 +133,10 @@ wss.on('connection', function(ws) {
 				console.log("*********************************************\n");
 			}
 
+
+			//write to postgres db
+
+			///*********************************************Remove*/
 			// Broadcast this update to each client and store it in the board
 			console.log("New data to write from user " + "{DUMMY}");
 			var index = x + (DIM * y);
@@ -152,6 +156,17 @@ wss.on('connection', function(ws) {
 			
 		}
 	});
+	const redisChannel = "board_channel;"
+	redisClient.on("message", function(channel, mesage) {
+		console.log(`Received ${message} from ${channel}`);
+		if (message) {
+			console.log("Read data from Redis Channel.");		
+			//broadcast writes to users.
+			board[index] = colour;	
+			wss.broadcast(message);
+		}
+	});
+	redisClient.subscribe(redisChannel);
 });
 
 // Heartbeat (ping) sent to all clients
