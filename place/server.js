@@ -116,6 +116,9 @@ const interval = setInterval(function ping() {
   });
 }, 30000);
 
+// Database
+//const db = require('./db.js');
+
 // Express server for HTTP
 let express = require('express');
 let app = express();
@@ -128,17 +131,33 @@ app.use(session({
 	secret: SECRET,
 }))
 
+let sessList = {};
+
+
 function printSession(req, res, next) {
-	console.log("SESSION:" , req.session);
+	let id = req.session.id;
+	if (sessList[id] == null) {
+		sessList[id] = Date.now();
+	} else {
+		let last = sessList[id];
+		let elapsed = Math.floor((Date.now() - last)/1000);
+		if (elapsed < 5) {
+			console.log("timeout!");
+			res.status(400);
+			res.send();
+			return;
+		}
+	}
+	console.log(sessList);
 	next();
 }
 
 // Serve static content
-app.use('/', printSession, express.static('static_files')); // this directory has files to be returned
+app.use(express.static('static_files')); // this directory has files to be returned
 
 // Update endpoint
-app.use('/update', (req, res) => {
-	
+app.post('/update', printSession, (req, res) => {
+
 })
 
 app.listen(HTTP_PORT, () => {
