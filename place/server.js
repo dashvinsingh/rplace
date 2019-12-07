@@ -136,6 +136,11 @@ function printSession(req, res, next) {
 // Serve static content
 app.use('/', printSession, express.static('static_files')); // this directory has files to be returned
 
+// Update endpoint
+app.use('/update', (req, res) => {
+	
+})
+
 app.listen(HTTP_PORT, () => {
 	if (VERBOSE) {
 		console.log("\n========================================");
