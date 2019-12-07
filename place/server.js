@@ -156,19 +156,21 @@ wss.on('connection', function(ws) {
 			
 		}
 	});
-	const redisChannel = "board_channel;"
-	redisClient.on("message", function(channel, mesage) {
+});
+
+	const redisChannel = "board_channel";
+	redisClient.publish(redisChannel, "from server");
+	redisClient.subscribe(redisChannel);
+	redisClient.on("message", function(channel, message) {
+		console.log("on message");
 		console.log(`Received ${message} from ${channel}`);
 		if (message) {
 			console.log("Read data from Redis Channel.");		
 			//broadcast writes to users.
-			board[index] = colour;	
+			//board[index] = colour;	
 			wss.broadcast(message);
 		}
 	});
-	redisClient.subscribe(redisChannel);
-});
-
 // Heartbeat (ping) sent to all clients
 const interval = setInterval(function ping() {
   wss.clients.forEach(function each(ws) {
