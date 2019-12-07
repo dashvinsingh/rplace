@@ -46,9 +46,8 @@
 			// Hoist these functions on load
 			$(function() {
 
-        // Make a socket connection to 8081
-        port = parseInt(window.location.port) + 1;
-        console.log(port);
+        		// Make a socket connection to 8081
+        		port = 8081;
 				socket = new WebSocket("ws://" + window.location.hostname + ":" + port);
 
 				// Don't know what this is for honestly
@@ -81,7 +80,7 @@
 					console.log("===========RECEIVED===============");
 
 					// Make an array with RGB values for each colour code
-					let colours = new Uint8ClampedArray(codes.length * 4);
+					colours = new Uint8ClampedArray(codes.length * 4);
 					let j = 0;
 					for (let i = 0; i < colours.length; i += 4) {
 						let rgb = colourMap[codes[j]];
