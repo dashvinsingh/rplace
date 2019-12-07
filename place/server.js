@@ -34,42 +34,53 @@ const client = new Client({
 console.log("Connecting to persistent storage");
 client.connect(err => {
     if (err) {
-      console.error('connection error', err.stack)
+      console.error('Postgres connection error:', err.stack)
     } else {
-		if(VERBOSE) {
-			console.log("")
-			console.log("--------------------------");
-			console.log('CONNECTED TO PERSISTENT DB')
-			console.log("--------------------------");
-		}
-      let createCanvas = `CREATE TABLE IF NOT EXISTS Canvas("X" int NOT NULL,"Y" int NOT NULL,"Colour" int NOT NULL,"timestamp" timestamp(6) NOT NULL,Primary KEY ("X", "Y"));`;
-      client.query(createCanvas, function(err, results, fields) {
-        if (err) {
-          console.log(err.message);
-        } else {
 			if(VERBOSE) {
-				console.log("")
-				console.log("--------------------------");
-				console.log("CANVAS TABLE CREATED");
-				console.log("--------------------------");
+				console.log("\n----------------------------");
+				console.log('CONNECTED TO PERSISTENT DB')
+				console.log("----------------------------\n");
 			}
-		}
-	  });
-	  
-	  let createSessions = `CREATE TABLE IF NOT EXISTS Sessions("SessionID" VARCHAR(22)) NOT NULL, timestamp(6) not NULL, Primary Key("SessionID"))`;
-	  client.query(createCanvas, function(err, results, fields) {
-        if (err) {
-          console.log(err.message);
-        } else {
-			if(VERBOSE) {
-				console.log("")
-				console.log("--------------------------");
-				console.log("SESSIONS TABLE CREATED");
-				console.log("--------------------------");
-			}
-		}
-	  });
 
+			let createBoard = `
+				CREATE TABLE IF NOT EXISTS board(
+					"offset" int PRIMARY KEY,
+					"colour" int NOT NULL,
+					"updated" timestamp(6) NOT NULL
+				);
+			`
+
+      client.query(createBoard, (err, results, fields) => {
+        if (err) {
+          console.log("Failed to create board: ", err.message);
+        } else {
+					if(VERBOSE) {
+						console.log("")
+						console.log("--------------------------");
+						console.log("CANVAS TABLE CREATED");
+						console.log("--------------------------");
+					}
+				}
+	  	});
+	  
+			let createSessions = `
+				CREATE TABLE IF NOT EXISTS sessions(
+					"id" VARCHAR(22) NOT NULL PRIMARY KEY, 
+					"accessed" timestamp(6) NOT NULL
+				)`;
+
+			client.query(createSessions, function(err, results, fields) {
+				if (err) {
+					console.log("Failed to create sessions:", err.message);
+				} else {
+					if(VERBOSE) {
+						console.log("")
+						console.log("--------------------------");
+						console.log("SESSIONS TABLE CREATED");
+						console.log("--------------------------");
+					}
+				}
+			});
     }
 })
 console.log("Finished connecting");
@@ -211,7 +222,7 @@ function printSession(req, res, next) {
 		sessList[id] = Date.now();
 	} else {
 		let last = sessList[id];
-		let elapsed = Math.floor((Date.now() - last)/1000);
+		let elapsed = Math.floor((Date.now()-last)/1000);
 		if (elapsed < 5) {
 			console.log("timeout!");
 			res.status(400);
