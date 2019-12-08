@@ -36,12 +36,13 @@ const client = new Client({
     port: 5432
 })
 
-console.log("Connecting to persistent storage");
+if (VERBOSE) console.log("Connecting to persistent storage");
+
 client.connect(err => {
     if (err) {
       console.error('Postgres connection error:', err.stack)
     } else {
-			if(VERBOSE) {
+			if (VERBOSE) {
 				console.log("\n----------------------------");
 				console.log('CONNECTED TO PERSISTENT DB')
 				console.log("----------------------------\n");
@@ -49,32 +50,41 @@ client.connect(err => {
 
 			let createBoard = `
 				CREATE TABLE IF NOT EXISTS board(
-					"offset" int PRIMARY KEY,
-					"colour" int NOT NULL,
-					"updated" timestamp(6) NOT NULL
+					index int PRIMARY KEY,
+					colour int NOT NULL,
+					updated timestamp(6) NOT NULL
 				);
 			`
 
-      client.query(createBoard, (err, results, fields) => {
+      client.query(createBoard, (err) => {
         if (err) {
           console.log("Failed to create board: ", err.message);
         } else {
-					if(VERBOSE) {
-						console.log("")
-						console.log("--------------------------");
-						console.log("CANVAS TABLE CREATED");
-						console.log("--------------------------");
+					if (VERBOSE) {
+						console.log("\n--------------------------");
+						console.log("BOARD TABLE CREATED");
+						console.log("--------------------------\n");
 					}
 				}
-	  	});
+			});
+			
+			// Initialize all colours in the board as 0
+			let index = 0;
+			while (index < (DIM * DIM)) {
+				let zero = `INSERT INTO board (index, colour, updated) VALUES (${index}, 0, CURRENT_TIMESTAMP)`;
+				client.query(zero, (err) => {if (err) console.log("Initializing error:", err)});
+				index++;
+			}
+			console.log("Final index written:", index);
+			
 	  
 			let createSessions = `
 				CREATE TABLE IF NOT EXISTS sessions(
-					"id" VARCHAR(22) NOT NULL PRIMARY KEY, 
-					"accessed" timestamp(6) NOT NULL
+					id VARCHAR(22) NOT NULL PRIMARY KEY, 
+					accessed timestamp(6) NOT NULL
 				)`;
 
-			client.query(createSessions, function(err, results, fields) {
+			client.query(createSessions, (err) => {
 				if (err) {
 					console.log("Failed to create sessions:", err.message);
 				} else {
@@ -88,7 +98,19 @@ client.connect(err => {
 			});
     }
 })
-console.log("Finished connecting");
+
+if (VERBOSE) console.log("Finished connecting");
+
+// Update a colour in the board at a given index
+function updateBoard(index, colour) {
+	let query = `UPDATE board SET colour = ${colour}, updated = CURRENT_TIMESTAMP, WHERE index=${index};`
+	client.query(query, (err) => {
+		if (err) console.log("Update failed!");
+	})
+}
+
+
+
  
 /*
 -------------------------------------------------------------------------------------------------------------------------------------
