@@ -98,7 +98,6 @@ client.connect(err => {
 			});
     }
 })
-<<<<<<< HEAD
 
 if (VERBOSE) console.log("Finished connecting");
 
@@ -112,7 +111,6 @@ function updateBoard(index, colour) {
 
 
 
-=======
 console.log("Finished connecting");
 
 
@@ -155,7 +153,6 @@ redisClient.on("message", function(channel, mesage) {
 		}
 });
 redisClient.subscribe(redisChannel);
->>>>>>> d192670d09528b28ef0e39044e190b8c68391c47
  
 
 //**********CODE TO Write to redis cache, for the middle node***************/
