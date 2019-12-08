@@ -131,6 +131,22 @@ redisClient.on("message", function(channel, mesage) {
 });
 redisClient.subscribe(redisChannel);
  
+
+//**********CODE TO Write to redis cache, for the middle node***************/
+// redisClient.send_command("BITFIELD", [redisKey, "SET", "u8", `#${index}`, colour], function(err, reply) {
+// 	if (err) console.log(err);
+// 	if (reply) {
+// 			console.log("REDIS Write successful");
+// 			console.log(reply);
+
+// 			//broadcast writes to users.
+// 			board[index] = colour;
+// 			wss.broadcast(message);
+// 	}
+
+// });
+
+
 /*
 -------------------------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------API-----------------------------------------------------------------
