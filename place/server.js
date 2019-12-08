@@ -37,18 +37,12 @@ const db = new Client({
     port: 5432
 })
 
-<<<<<<< HEAD
 if (VERBOSE) console.log("Connecting to persistent storage");
 
 client.connect(err => {
-=======
-console.log("Connecting to persistent storage");
-db.connect(err => {
->>>>>>> remotes/origin/database
     if (err) {
       console.error('Postgres connection error:', err.stack)
     } else {
-<<<<<<< HEAD
 			if (VERBOSE) {
 				console.log("\n----------------------------");
 				console.log('CONNECTED TO PERSISTENT DB')
@@ -63,33 +57,9 @@ db.connect(err => {
 				);`
 
       client.query(createBoard, (err) => {
-=======
-		if(VERBOSE) {
-			console.log("--------------------------");
-			console.log('CONNECTED TO PERSISTENT DB')
-			console.log("--------------------------");
-		}
-	  let createCanvas = 'CREATE TABLE IF NOT EXISTS Canvas(Idx INT PRIMARY KEY, Colour INT NOT NULL,last_edit  BIGINT not NULL);';
-      db.query(createCanvas, function(err, results, fields) {
-        if (err) {
-		  console.log(err.message);
-        } else {
-			var time = Date.now();
-			if(VERBOSE) {
-				console.log("--------------------------");
-				console.log("CANVAS TABLE CREATED");
-				console.log("--------------------------");
-			}
-		}
-	  });
-	  
-	  let createSessions = 'CREATE TABLE IF NOT EXISTS Sessions(SessionID VARCHAR(33) PRIMARY KEY, last_edit BIGINT not NULL);';
-	  db.query(createSessions, function(err, results, fields) {
->>>>>>> remotes/origin/database
         if (err) {
           console.log("Failed to create board: ", err.message);
         } else {
-<<<<<<< HEAD
 					if (VERBOSE) {
 						console.log("\n--------------------------");
 						console.log("BOARD TABLE CREATED");
@@ -126,17 +96,6 @@ db.connect(err => {
 					}
 				}
 			});
-=======
-			if(VERBOSE) {
-				console.log("--------------------------");
-				console.log("SESSIONS TABLE CREATED");
-				console.log("--------------------------");
-				db.query("Insert into Sessions Values ('00', $1)", [0]);
-			}
-		}
-	  });
-
->>>>>>> remotes/origin/database
     }
 })
 
@@ -354,70 +313,51 @@ app.use(session({
 	secret: SECRET,
 }))
 
-let sessList = {};
-
-
 function getOffset(x, y){
 	return x + (y*DIM);
 }
 
-
-function printSession(req, response, next) {
-	var time = Date.now();
-	console.log("doing stuff");
+// Check the session id timestamp or make one
+function checkSession(req, res, next) {
+	let time = Date.now();
 	let id = req.session.id;
-	// if (!(id.match(/^[a-z0-9]+$/i)) && id.length <= 33) {
-	// 	console.log("here");
-	// 	return;
-	// }
-	db.query("Select last_edit from Sessions where sessionid=$1", [id],(err, res) => {
+
+	// Check the sessions table for an id
+	let queryString = "SELECT * FROM sessions WHERE id=?;"
+	client.query(queryString, [id], (err, data) => {
 		if (err) {
-			console.log("Unable to check Sessionid", id, err);
-			return;
-		} else {
-			// User does not exist
-			if(res.rowCount == 0){
-				console.log("\n\nNEW ACCOUNT\n\n");
-				db.query("Insert into Sessions Values($1, $2)", [id, time], (err, res) => {
-					if (err) {
-						console.log("Error creating database entry for session", id);
-						return;
-					} else {
-						console.log("Account created");
-					}
-				});
-			} else {
-				//One Session, too early to change,
-				if((time - res.row[0].last_edit).getMinutes < timeBuffer){
-					response.status(400);
-					response.send();
-					return;					
-				} else {
-					console.log("\n\nOLD ACCOUNT\n\n");
-				}
-			}
-			next();
-		}
-	})
-
-
-
-	console.log("SESSION:" , req.session.id);
-	if (sessList[id] == null) {
-		sessList[id] = time;
-	} else {
-		let last = sessList[id];
-		let elapsed = Math.floor((Date.now()-last)/1000);
-		if (elapsed < 5) {
-			console.log("timeout!");
-			res.status(400);
+			console.log("error:", err);
+			res.status(500);
 			res.send();
 			return;
+
+		// Make a session row if it doesn't exist	
+		} else if (data.rowCount == 0) {
+			queryString = "INSERT INTO sessions VALUES($1, $2)";
+			client.query(queryString, [id, time], (err) => {
+				if (err) {
+					console.log("error:", err);
+					res.status(500);
+					res.send();
+					return;
+				}
+			})
+
+		// Compare the timestamp of the last time that session id was used	
+		} else {
+			let updated = data.row[0].updated;
+			let elapsed = Math.floor((time - updated)/1000);
+			if (elapsed < 10) {
+				res.status(400);
+				res.send();
+				return;
+			}
 		}
-	}
-	console.log(sessList);
+	})
 	next();
 }
+
+
 
 // Serve static content
 app.use(express.static('static_files')); // this directory has files to be returned
@@ -449,3 +389,41 @@ app.listen(HTTP_PORT, () => {
 //   7) https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array
 //   8) https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/getImageData
 
+
+
+
+	// var time = Date.now();
+	// console.log("doing stuff");
+	// let id = req.session.id;
+	// // if (!(id.match(/^[a-z0-9]+$/i)) && id.length <= 33) {
+	// // 	console.log("here");
+	// // 	return;
+	// // }
+	// db.query("Select last_edit from Sessions where sessionid=$1", [id],(err, res) => {
+	// 	if (err) {
+	// 		console.log("Unable to check Sessionid", id, err);
+	// 		return;
+	// 	} else {
+	// 		// User does not exist
+	// 		if(res.rowCount == 0){
+	// 			console.log("\n\nNEW ACCOUNT\n\n");
+	// 			db.query("Insert into Sessions Values($1, $2)", [id, time], (err, res) => {
+	// 				if (err) {
+	// 					console.log("Error creating database entry for session", id);
+	// 					return;
+	// 				} else {
+	// 					console.log("Account created");
+	// 				}
+	// 			});
+	// 		} else {
+	// 			//One Session, too early to change,
+	// 			if((time - res.row[0].last_edit).getMinutes < timeBuffer){
+	// 				response.status(400);
+	// 				response.send();
+	// 				return;					
+	// 			} else {
+	// 				console.log("\n\nOLD ACCOUNT\n\n");
+	// 			}
+	// 		}
+	// 		next();
+	// 	}
