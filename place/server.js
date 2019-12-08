@@ -7,6 +7,7 @@ const HTTP_PORT = process.argv[3] || 8080;
 const WS_PORT = parseInt(HTTP_PORT) + 1;
 const SECRET = process.argv[4] || "arnold";
 const DIM = 250;
+const timeBuffer = 5;
 
 // Websockets
 const WebSocket = require('ws');
@@ -28,7 +29,7 @@ const pool = new Pool({
     port: 5432
 })
 
-const client = new Client({
+const db = new Client({
     user: 'postgres',
     host: 'r-place-1.cg7a8becuhbz.us-east-2.rds.amazonaws.com',
     database: 'Canvas',
@@ -36,12 +37,18 @@ const client = new Client({
     port: 5432
 })
 
+<<<<<<< HEAD
 if (VERBOSE) console.log("Connecting to persistent storage");
 
 client.connect(err => {
+=======
+console.log("Connecting to persistent storage");
+db.connect(err => {
+>>>>>>> remotes/origin/database
     if (err) {
       console.error('Postgres connection error:', err.stack)
     } else {
+<<<<<<< HEAD
 			if (VERBOSE) {
 				console.log("\n----------------------------");
 				console.log('CONNECTED TO PERSISTENT DB')
@@ -56,9 +63,33 @@ client.connect(err => {
 				);`
 
       client.query(createBoard, (err) => {
+=======
+		if(VERBOSE) {
+			console.log("--------------------------");
+			console.log('CONNECTED TO PERSISTENT DB')
+			console.log("--------------------------");
+		}
+	  let createCanvas = 'CREATE TABLE IF NOT EXISTS Canvas(Idx INT PRIMARY KEY, Colour INT NOT NULL,last_edit  BIGINT not NULL);';
+      db.query(createCanvas, function(err, results, fields) {
+        if (err) {
+		  console.log(err.message);
+        } else {
+			var time = Date.now();
+			if(VERBOSE) {
+				console.log("--------------------------");
+				console.log("CANVAS TABLE CREATED");
+				console.log("--------------------------");
+			}
+		}
+	  });
+	  
+	  let createSessions = 'CREATE TABLE IF NOT EXISTS Sessions(SessionID VARCHAR(33) PRIMARY KEY, last_edit BIGINT not NULL);';
+	  db.query(createSessions, function(err, results, fields) {
+>>>>>>> remotes/origin/database
         if (err) {
           console.log("Failed to create board: ", err.message);
         } else {
+<<<<<<< HEAD
 					if (VERBOSE) {
 						console.log("\n--------------------------");
 						console.log("BOARD TABLE CREATED");
@@ -95,6 +126,17 @@ client.connect(err => {
 					}
 				}
 			});
+=======
+			if(VERBOSE) {
+				console.log("--------------------------");
+				console.log("SESSIONS TABLE CREATED");
+				console.log("--------------------------");
+				db.query("Insert into Sessions Values ('00', $1)", [0]);
+			}
+		}
+	  });
+
+>>>>>>> remotes/origin/database
     }
 })
 
@@ -217,7 +259,8 @@ function validUpdate(x, y, colour) {
 		valid = 
 			Number.isInteger(x) && x != null && 0 <= x && x < DIM &&
 			Number.isInteger(y) && y != null && 0 <= y && y < DIM && 
-			Number.isInteger(colour) && colour != null && 0 <= colour && colour <= 15;
+			Number.isInteger(colour) && colour != null && 0 <= colour && colour <= 15;// &&
+//			.match(/^[a-z0-9]+$/i);
 	} catch (err) {
 		console.log("Recieved an invalid update:", err);
 		valid = false;
@@ -258,7 +301,7 @@ wss.on('connection', function(ws) {
 	// If we are getting writes over HTTP then this section won't exist anymore, clients never write to socket.
 	ws.on('message', function(message) {
 		const buffer = Buffer.from(message);
-		let time = Date.now();
+		
 		let x = buffer[0];
 		let y = buffer[1];
 		let colour = buffer[3];
@@ -270,6 +313,7 @@ wss.on('connection', function(ws) {
 		}
 
 		if (validUpdate(x, y, colour)) {
+			
 			if (VERBOSE) {
 				console.log("*********************************************");
 				console.log("Updating pixel at ("+x +","+y+") to colour:", colour);
@@ -313,11 +357,54 @@ app.use(session({
 let sessList = {};
 
 
-function printSession(req, res, next) {
+function getOffset(x, y){
+	return x + (y*DIM);
+}
+
+
+function printSession(req, response, next) {
+	var time = Date.now();
+	console.log("doing stuff");
 	let id = req.session.id;
+	// if (!(id.match(/^[a-z0-9]+$/i)) && id.length <= 33) {
+	// 	console.log("here");
+	// 	return;
+	// }
+	db.query("Select last_edit from Sessions where sessionid=$1", [id],(err, res) => {
+		if (err) {
+			console.log("Unable to check Sessionid", id, err);
+			return;
+		} else {
+			// User does not exist
+			if(res.rowCount == 0){
+				console.log("\n\nNEW ACCOUNT\n\n");
+				db.query("Insert into Sessions Values($1, $2)", [id, time], (err, res) => {
+					if (err) {
+						console.log("Error creating database entry for session", id);
+						return;
+					} else {
+						console.log("Account created");
+					}
+				});
+			} else {
+				//One Session, too early to change,
+				if((time - res.row[0].last_edit).getMinutes < timeBuffer){
+					response.status(400);
+					response.send();
+					return;					
+				} else {
+					console.log("\n\nOLD ACCOUNT\n\n");
+				}
+			}
+			next();
+		}
+	})
+
+
+
 	console.log("SESSION:" , req.session.id);
 	if (sessList[id] == null) {
-		sessList[id] = Date.now();
+		sessList[id] = time;
 	} else {
 		let last = sessList[id];
 		let elapsed = Math.floor((Date.now()-last)/1000);
@@ -335,8 +422,12 @@ function printSession(req, res, next) {
 // Serve static content
 app.use(express.static('static_files')); // this directory has files to be returned
 
-// Update endpoint
+// Update endpointg
 app.post('/update', printSession, (req, res) => {
+	console.log(req.body);
+	//console.log(res);
+	console.log("UPPPPPPPPPPPPPPPPPPDDDDDDDDDDDAAAAAAAAAAAAAAAAATTTTTTTTTTTTEEEEEEEEEEEEEEEEEEEE CCCCCCCCCAAAAAAAAAAANNNNNNNNNNNNVVVVVVVVVVAAAAAAAAAASSSSSSSS");
+
 
 })
 
