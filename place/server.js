@@ -8,7 +8,6 @@ const WS_PORT = parseInt(HTTP_PORT) + 1;
 const SECRET = process.argv[4] || "arnold";
 const DIM = 250;
 const timeBuffer = 5;
-const totalPixels = DIM*DIM;
 
 // Websockets
 const WebSocket = require('ws');
@@ -58,10 +57,6 @@ db.connect(err => {
 				console.log("--------------------------");
 				console.log("CANVAS TABLE CREATED");
 				console.log("--------------------------");
-				var i = 0;
-				while (i < totalPixels) {
-					db.query('INSERT into Canvas Values($1,0,$2);', [i,time]);
-				}
 			}
 		}
 	  });
@@ -219,7 +214,9 @@ app.use(session({
 let sessList = {};
 
 
-
+function getOffset(x, y){
+	return x + (y*DIM);
+}
 
 
 function printSession(req, response, next) {
@@ -256,7 +253,6 @@ function printSession(req, response, next) {
 					console.log("\n\nOLD ACCOUNT\n\n");
 				}
 			}
-			console.log(res);
 			next();
 		}
 	})
@@ -285,7 +281,10 @@ app.use(express.static('static_files')); // this directory has files to be retur
 
 // Update endpointg
 app.post('/update', printSession, (req, res) => {
+	console.log(req.body);
+	//console.log(res);
 	console.log("UPPPPPPPPPPPPPPPPPPDDDDDDDDDDDAAAAAAAAAAAAAAAAATTTTTTTTTTTTEEEEEEEEEEEEEEEEEEEE CCCCCCCCCAAAAAAAAAAANNNNNNNNNNNNVVVVVVVVVVAAAAAAAAAASSSSSSSS");
+
 
 })
 
