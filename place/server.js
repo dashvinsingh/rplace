@@ -69,13 +69,13 @@ client.connect(err => {
 			});
 			
 			// Initialize all colours in the board as 0
-			let index = 0;
-			while (index < (DIM * DIM)) {
-				let zero = `INSERT INTO board (index, colour, updated) VALUES (${index}, 0, CURRENT_TIMESTAMP)`;
-				client.query(zero, (err) => {if (err) console.log("Initializing error:", err)});
-				index++;
-			}
-			console.log("Final index written:", index);
+			// let index = 0;
+			// while (index < (DIM * DIM)) {
+			// 	let zero = `INSERT INTO board (index, colour, updated) VALUES (${index}, 0, CURRENT_TIMESTAMP)`;
+			// 	client.query(zero, (err) => {if (err) console.log("Initializing error:", err)});
+			// 	index++;
+			// }
+			// console.log("Final index written:", index);
 			
 	  
 			let createSessions = `
