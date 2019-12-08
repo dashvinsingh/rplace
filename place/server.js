@@ -53,8 +53,7 @@ client.connect(err => {
 					index int PRIMARY KEY,
 					colour int NOT NULL,
 					updated timestamp(6) NOT NULL
-				);
-			`
+				);`
 
       client.query(createBoard, (err) => {
         if (err) {
