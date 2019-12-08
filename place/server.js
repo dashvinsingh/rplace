@@ -89,6 +89,47 @@ client.connect(err => {
     }
 })
 console.log("Finished connecting");
+
+
+
+
+/*
+-------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------Redis-----------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------
+*/
+
+// Redis Client
+const redis = require("redis")
+const redis_host = "redis://place.tjlnvm.ng.0001.use2.cache.amazonaws.com";
+
+//###Redis Error Handling to be Done.
+const options = {return_buffer: true, retry_strategy:  function(options) {
+        if (options.attempt > 3) {
+                return Error("Unable to connect to redis!");
+        }
+}}
+const redisClient = redis.createClient(redis_host, options);
+redisClient.on('error', function (err) {
+    assert(err instanceof Error);
+    assert(err instanceof redis.AbortError);
+    assert(err instanceof redis.AggregateError);
+    // The set and get get aggregated in here
+    console.log("Unable to connect to redis.");
+});
+
+// Create Pub-Sub channel with redis
+const redisChannel = "board_channel;"
+redisClient.on("message", function(channel, mesage) {
+		if (VERBOSE) console.log(`Received ${message} from ${channel}`);
+		if (message) {
+				if (VERBOSE) console.log("Broadcasted data from redis channel to all ws clients.");
+				//broadcast writes to users.
+				board[index] = colour;
+				wss.broadcast(message);
+		}
+});
+redisClient.subscribe(redisChannel);
  
 /*
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -111,16 +152,17 @@ wss.on('close', () => {
 
 // Broadcast to all connected clients
 wss.broadcast = function broadcast(data) {
+	if (VERBOSE) {
+		console.log("->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->");
+		console.log("Sending message:", data)
+		console.log("->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->");
+	}
   wss.clients.forEach(function each(client) {
     if (client.readyState === WebSocket.OPEN) {
-			if (VERBOSE) {
-				console.log("->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->");
-				console.log("Sending message:", data)
-				console.log("->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->");
-			}
-
       client.send(data);
-    }
+    } else {
+		console.log("Unable to send")
+	}
   });
 };
 
@@ -162,10 +204,20 @@ wss.on('connection', function(ws) {
 	boardInfo[0] = 0;
 	boardInfo[1] = 0;
 	boardInfo[2] = DIM;
-	boardInfo.set(board, 0);
-	ws.send(boardInfo);
+	//Pull board from redis cache on first launch
+	const redisKey = "board";
+	redisClient.send_command("GET", [redisKey], function(err, reply) {
+			if (err) {console.log("Unable to GET board from Redis. " + err);};
+			if (reply) {
+							if (VERBOSE) console.log(`REDIS GET ${redisKey}, Size: ${reply.length}`);
+							boardInfo.set(Buffer.from(reply), 3);
+							ws.send(boardInfo);
+			}
+	})
+
 	
 	// On a client update, broadcast that update to all clients
+	// If we are getting writes over HTTP then this section won't exist anymore, clients never write to socket.
 	ws.on('message', function(message) {
 		const buffer = Buffer.from(message);
 		let time = Date.now();
