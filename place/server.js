@@ -70,7 +70,6 @@ db.connect(err => {
 				console.log("--------------------------");
 				console.log("SESSIONS TABLE CREATED");
 				console.log("--------------------------");
-				db.query("Insert into Sessions Values ('00', $1)", [0]);
 			}
 		}
 	  });
@@ -273,20 +272,28 @@ function printSession(req, response, next) {
 		}
 	}
 	console.log(sessList);
+	//updateCanvas(x,y,colour,time);
 	next();
 }
 
 // Serve static content
 app.use(express.static('static_files')); // this directory has files to be returned
 
-// Update endpointg
+// Update endpoint
 app.post('/update', printSession, (req, res) => {
 	console.log(req.body);
-	//console.log(res);
-	console.log("UPPPPPPPPPPPPPPPPPPDDDDDDDDDDDAAAAAAAAAAAAAAAAATTTTTTTTTTTTEEEEEEEEEEEEEEEEEEEE CCCCCCCCCAAAAAAAAAAANNNNNNNNNNNNVVVVVVVVVVAAAAAAAAAASSSSSSSS");
-
-
 })
+
+function updateCanvas(x, y, colour, time) {
+	var offset = x + (y*DIM);
+	let query = ("UPDATE board SET colour = $1 where index = $2;" [colour, offset], (err, res) => {
+		if(err){
+			console.log();
+		} else {
+			//Send error to client
+		}
+	})
+}
 
 app.listen(HTTP_PORT, () => {
 	if (VERBOSE) {
