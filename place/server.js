@@ -39,7 +39,7 @@ const db = new Client({
 
 if (VERBOSE) console.log("Connecting to persistent storage");
 
-client.connect(err => {
+db.connect(err => {
     if (err) {
       console.error('Postgres connection error:', err.stack)
     } else {
@@ -56,7 +56,7 @@ client.connect(err => {
 					updated timestamp(6) NOT NULL
 				);`
 
-      client.query(createBoard, (err) => {
+      db.query(createBoard, (err) => {
         if (err) {
           console.log("Failed to create board: ", err.message);
         } else {
@@ -84,7 +84,7 @@ client.connect(err => {
 					accessed timestamp(6) NOT NULL
 				)`;
 
-			client.query(createSessions, (err) => {
+			db.query(createSessions, (err) => {
 				if (err) {
 					console.log("Failed to create sessions:", err.message);
 				} else {
@@ -104,7 +104,7 @@ if (VERBOSE) console.log("Finished connecting");
 // Update a colour in the board at a given index
 function updateBoard(index, colour) {
 	let query = `UPDATE board SET colour = ${colour}, updated = CURRENT_TIMESTAMP, WHERE index=${index};`
-	client.query(query, (err) => {
+	db.query(query, (err) => {
 		if (err) console.log("Update failed!");
 	})
 }
@@ -116,7 +116,7 @@ function checkSession(req, res, next) {
 
 	// Check the sessions table for an id
 	let queryString = "SELECT * FROM sessions WHERE id=?;"
-	client.query(queryString, [id], (err, data) => {
+	db.query(queryString, [id], (err, data) => {
 		if (err) {
 			console.log("error:", err);
 			res.status(500);
@@ -126,7 +126,7 @@ function checkSession(req, res, next) {
 		// Make a session row if it doesn't exist	
 		} else if (data.rowCount == 0) {
 			queryString = "INSERT INTO sessions VALUES($1, $2)";
-			client.query(queryString, [id, time], (err) => {
+			db.query(queryString, [id, time], (err) => {
 				if (err) {
 					console.log("error:", err);
 					res.status(500);
@@ -158,37 +158,37 @@ function checkSession(req, res, next) {
 -------------------------------------------------------------------------------------------------------------------------------------
 */
 
-// Redis Client
-const redis = require("redis")
-const redis_host = "redis://place.tjlnvm.ng.0001.use2.cache.amazonaws.com";
+// // Redis Client
+// const redis = require("redis")
+// const redis_host = "redis://place.tjlnvm.ng.0001.use2.cache.amazonaws.com";
 
-//###Redis Error Handling to be Done.
-const options = {return_buffer: true, retry_strategy:  function(options) {
-        if (options.attempt > 3) {
-                return Error("Unable to connect to redis!");
-        }
-}}
-const redisClient = redis.createClient(redis_host, options);
-redisClient.on('error', function (err) {
-    assert(err instanceof Error);
-    assert(err instanceof redis.AbortError);
-    assert(err instanceof redis.AggregateError);
-    // The set and get get aggregated in here
-    console.log("Unable to connect to redis.");
-});
+// //###Redis Error Handling to be Done.
+// const options = {return_buffer: true, retry_strategy:  function(options) {
+//         if (options.attempt > 3) {
+//                 return Error("Unable to connect to redis!");
+//         }
+// }}
+// const redisClient = redis.createClient(redis_host, options);
+// redisClient.on('error', function (err) {
+//     assert(err instanceof Error);
+//     assert(err instanceof redis.AbortError);
+//     assert(err instanceof redis.AggregateError);
+//     // The set and get get aggregated in here
+//     console.log("Unable to connect to redis.");
+// });
 
-// Create Pub-Sub channel with redis
-const redisChannel = "board_channel;"
-redisClient.on("message", function(channel, mesage) {
-		if (VERBOSE) console.log(`Received ${message} from ${channel}`);
-		if (message) {
-				if (VERBOSE) console.log("Broadcasted data from redis channel to all ws clients.");
-				//broadcast writes to users.
-				board[index] = colour;
-				wss.broadcast(message);
-		}
-});
-redisClient.subscribe(redisChannel);
+// // Create Pub-Sub channel with redis
+// const redisChannel = "board_channel;"
+// redisClient.on("message", function(channel, mesage) {
+// 		if (VERBOSE) console.log(`Received ${message} from ${channel}`);
+// 		if (message) {
+// 				if (VERBOSE) console.log("Broadcasted data from redis channel to all ws clients.");
+// 				//broadcast writes to users.
+// 				board[index] = colour;
+// 				wss.broadcast(message);
+// 		}
+// });
+// redisClient.subscribe(redisChannel);
  
 
 //**********CODE TO Write to redis cache, for the middle node***************/
