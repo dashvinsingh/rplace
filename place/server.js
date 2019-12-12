@@ -162,37 +162,37 @@ function checkSession(req, res, next) {
 -------------------------------------------------------------------------------------------------------------------------------------
 */
 
-// // Redis Client
-// const redis = require("redis")
-// const redis_host = "redis://place.tjlnvm.ng.0001.use2.cache.amazonaws.com";
+// Redis Client
+const redis = require("redis")
+const redis_host = "redis://place.tjlnvm.ng.0001.use2.cache.amazonaws.com";
 
-// //###Redis Error Handling to be Done.
-// const options = {return_buffer: true, retry_strategy:  function(options) {
-//         if (options.attempt > 3) {
-//                 return Error("Unable to connect to redis!");
-//         }
-// }}
-// const redisClient = redis.createClient(redis_host, options);
-// redisClient.on('error', function (err) {
-//     assert(err instanceof Error);
-//     assert(err instanceof redis.AbortError);
-//     assert(err instanceof redis.AggregateError);
-//     // The set and get get aggregated in here
-//     console.log("Unable to connect to redis.");
-// });
+//###Redis Error Handling to be Done.
+const options = {return_buffer: true, retry_strategy:  function(options) {
+        if (options.attempt > 3) {
+                return Error("Unable to connect to redis!");
+        }
+}}
+const redisClient = redis.createClient(redis_host, options);
+redisClient.on('error', function (err) {
+    assert(err instanceof Error);
+    assert(err instanceof redis.AbortError);
+    assert(err instanceof redis.AggregateError);
+    // The set and get get aggregated in here
+    console.log("Unable to connect to redis.");
+});
 
-// // Create Pub-Sub channel with redis
-// const redisChannel = "board_channel;"
-// redisClient.on("message", function(channel, mesage) {
-// 		if (VERBOSE) console.log(`Received ${message} from ${channel}`);
-// 		if (message) {
-// 				if (VERBOSE) console.log("Broadcasted data from redis channel to all ws clients.");
-// 				//broadcast writes to users.
-// 				board[index] = colour;
-// 				wss.broadcast(message);
-// 		}
-// });
-// redisClient.subscribe(redisChannel);
+// Create Pub-Sub channel with redis
+const redisChannel = "board_channel;"
+redisClient.on("message", function(channel, mesage) {
+		if (VERBOSE) console.log(`Received ${message} from ${channel}`);
+		if (message) {
+				if (VERBOSE) console.log("Broadcasted data from redis channel to all ws clients.");
+				//broadcast writes to users.
+				//board[index] = colour;
+				wss.broadcast(message);
+		}
+});
+redisClient.subscribe(redisChannel);
  
 
 //**********CODE TO Write to redis cache, for the middle node***************/
@@ -285,15 +285,15 @@ wss.on('connection', function(ws) {
 	boardInfo[2] = DIM;
 
 	//Pull board from redis cache on first launch
-	// const redisKey = "board";
-	// redisClient.send_command("GET", [redisKey], function(err, reply) {
-	// 		if (err) {console.log("Unable to GET board from Redis. " + err);};
-	// 		if (reply) {
-	// 						if (VERBOSE) console.log(`REDIS GET ${redisKey}, Size: ${reply.length}`);
-	// 						boardInfo.set(Buffer.from(reply), 3);
-	// 						ws.send(boardInfo);
-	// 		}
-	// })
+	const redisKey = "board";
+	redisClient.send_command("GET", [redisKey], function(err, reply) {
+			if (err) {console.log("Unable to GET board from Redis. " + err);};
+			if (reply) {
+							if (VERBOSE) console.log(`REDIS GET ${redisKey}, Size: ${reply.length}`);
+							boardInfo.set(Buffer.from(reply), 3);
+							ws.send(boardInfo);
+			}
+	})
 
 	
 	// On a client update, broadcast that update to all clients
@@ -320,7 +320,7 @@ wss.on('connection', function(ws) {
 			}
 
 			// Broadcast this update to each client and store it in the board
-			wss.broadcast(message);
+			//wss.broadcast(message);
 			index = x + (DIM * y);
 			//board[index] = colour;
 			updateBoard(index, colour);
