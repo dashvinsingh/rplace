@@ -241,7 +241,7 @@ wss.broadcast = function broadcast(data) {
 	let index = a[0];
 	let colour = a[1];
 	let x = index % DIM;
-	let y = index/DIM;
+	let y = Math.floor(index/DIM);
 	if (VERBOSE) console.log("Sending x, y, colour =", x, y, colour);
 
 	let boardInfo = new Uint8ClampedArray(DIM*DIM + 3);
