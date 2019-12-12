@@ -10,7 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "log-timestamp": "^0.3.0",
-    "pg": "^7.14.0"
+    "pg": "^7.14.0",
+    "redis": "^2.8.0"
   },
   "description": ""
 }
