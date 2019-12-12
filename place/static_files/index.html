@@ -46,8 +46,8 @@
 			// Hoist these functions on load
 			$(function() {
 
-        		// Make a socket connection to 8081
-        		port = 8081;
+        // Make a socket connection to 8081
+        port = 8081;
 				socket = new WebSocket("ws://" + window.location.hostname + ":" + port);
 
 				// Don't know what this is for honestly
@@ -147,23 +147,23 @@
 					update[2] = 1;
 					update[3] = code;
 					console.log("================SENDING================");
+					//console.log("x, y, code =", x, y, code);
 					console.log("x, y, num, code =", update[0], update[1], update[2], update[3]);
 					console.log("================SENT===================");
-					// socket.send(update);
-					
+					socket.send(update);
 
 					// Ajax POST request
-					$.ajax({
-						method: "POST",
-						url: "/update",
-						data: { user: "bhavjot"}
+					// $.ajax({
+					// 	method: "POST",
+					// 	url: "/update",
+					// 	data: { x:x, y:y, code:code}
 
-					}).done(() => {
-						console.log("done");
+					// }).done(() => {
+					// 	console.log("done");
 
-					}).fail((err) => {
-						alert("Can't submit!");
-					})
+					// }).fail((err) => {
+					// 	alert("Can't submit!");
+					// })
 
 					event.preventDefault();
 
