@@ -155,7 +155,6 @@
 
 				// Submit the pixel change
 				$('#setForm').submit(function( event ) {
-					event.preventDefault();
 
 					// Take the x and y values from the form
 					var x = $('#x').val();
@@ -177,6 +176,7 @@
 					var rgb = colourMapping[code];
 					context.fillStyle = 'rgb('+rgb.r+','+rgb.g+','+rgb.b+')';
 					context.fillRect(x, y, 1, 1);
+					event.preventDefault();
 
 					// Ajax POST request
 					// $.ajax({
