@@ -155,6 +155,7 @@
 
 				// Submit the pixel change
 				$('#setForm').submit(function( event ) {
+					event.preventDefault();
 
 					// Take the x and y values from the form
 					var x = $('#x').val();
@@ -171,11 +172,11 @@
 					console.log("x, y, num, code =", update[0], update[1], update[2], update[3]);
 					console.log("================SENT===================");
 					socket.send(update);
-
+					
 					var context = document.getElementById('canvas').getContext('2d');
 					var rgb = colourMapping[code];
 					context.fillStyle = 'rgb('+rgb.r+','+rgb.g+','+rgb.b+')';
-					context.fillRect(x, y, 1);
+					context.fillRect(x, y, 1, 1);
 
 					// Ajax POST request
 					// $.ajax({
@@ -190,7 +191,6 @@
 					// 	alert("Can't submit!");
 					// })
 
-					event.preventDefault();
 
 				});
 				
