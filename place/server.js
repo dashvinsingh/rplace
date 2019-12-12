@@ -174,13 +174,13 @@ const options = {return_buffer: true, retry_strategy:  function(options) {
 }}
 const redisClientRead = redis.createClient(redis_host, options);
 const redisClient = redis.createClient(redis_host);
-//redisClient.on('error', function (err) {
-//    assert(err instanceof Error);
-//    assert(err instanceof redis.AbortError);
-//    assert(err instanceof redis.AggregateError);
+redisClient.on('error', function (err) {
+    assert(err instanceof Error);
+    assert(err instanceof redis.AbortError);
+    assert(err instanceof redis.AggregateError);
     // The set and get get aggregated in here
-//    console.log("Unable to connect to redis.");
-//});
+    console.log("Unable to connect to redis.");
+});
 
 // Create Pub-Sub channel with redis
 redisClient.on("message", function(channel, message) {
@@ -299,7 +299,6 @@ wss.on('connection', function(ws) {
 	//Pull board from redis cache on first launch
 	const redisKey = "board";
 	redisClientRead.send_command("GET", [redisKey], function(err, reply) {
-			console.log(redisClientRead);
 			if (err) {console.log("Unable to GET board from Redis. " + err);};
 			if (reply) {
 							if (VERBOSE) console.log(`REDIS GET ${redisKey}, Size: ${reply.length}`);
