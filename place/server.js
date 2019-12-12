@@ -103,9 +103,13 @@ if (VERBOSE) console.log("Finished connecting");
 
 // Update a colour in the board at a given index
 function updateBoard(index, colour) {
-	let query = `UPDATE board SET colour = ${colour}, updated = CURRENT_TIMESTAMP, WHERE index=${index};`
+	let query = `UPDATE board SET colour = ${colour}, updated = CURRENT_TIMESTAMP WHERE index=${index};`
 	db.query(query, (err) => {
-		if (err) console.log("Update failed!");
+		if (err) {
+			if (VERBOSE) console.log("Update failed:", err);
+		} else {
+			if (VERBOSE) console.log("Update successful");
+		}
 	})
 }
 
@@ -279,16 +283,17 @@ wss.on('connection', function(ws) {
 	boardInfo[0] = 0;
 	boardInfo[1] = 0;
 	boardInfo[2] = DIM;
+
 	//Pull board from redis cache on first launch
-	const redisKey = "board";
-	redisClient.send_command("GET", [redisKey], function(err, reply) {
-			if (err) {console.log("Unable to GET board from Redis. " + err);};
-			if (reply) {
-							if (VERBOSE) console.log(`REDIS GET ${redisKey}, Size: ${reply.length}`);
-							boardInfo.set(Buffer.from(reply), 3);
-							ws.send(boardInfo);
-			}
-	})
+	// const redisKey = "board";
+	// redisClient.send_command("GET", [redisKey], function(err, reply) {
+	// 		if (err) {console.log("Unable to GET board from Redis. " + err);};
+	// 		if (reply) {
+	// 						if (VERBOSE) console.log(`REDIS GET ${redisKey}, Size: ${reply.length}`);
+	// 						boardInfo.set(Buffer.from(reply), 3);
+	// 						ws.send(boardInfo);
+	// 		}
+	// })
 
 	
 	// On a client update, broadcast that update to all clients
@@ -302,7 +307,7 @@ wss.on('connection', function(ws) {
 
 		if (VERBOSE) {
 			console.log("+++++++++++++++++++++++++++++++++++++++");
-			console.log("Got a new message:", x, y, colour, time);
+			console.log("Got a new message:", x, y, colour);
 			console.log("+++++++++++++++++++++++++++++++++++++++");
 		}
 
@@ -317,7 +322,8 @@ wss.on('connection', function(ws) {
 			// Broadcast this update to each client and store it in the board
 			wss.broadcast(message);
 			index = x + (DIM * y);
-			board[index] = colour;
+			//board[index] = colour;
+			updateBoard(index, colour);
 		}
 	});
 });
@@ -357,8 +363,8 @@ function getOffset(x, y){
 app.use(express.static('static_files')); // this directory has files to be returned
 
 // Update endpoint
-app.post('/update', checkSession, (req, res) => {
-	console.log(req.body);
+app.post('/update', (req, res) => {
+	console.log("Request: " , req);
 	//updateBoard();
 
 
