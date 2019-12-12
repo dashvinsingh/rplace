@@ -172,18 +172,18 @@ const options = {return_buffer: true, retry_strategy:  function(options) {
                 return Error("Unable to connect to redis!");
         }
 }}
-const redisClient = redis.createClient(redis_host, options);
-redisClient.on('error', function (err) {
-    assert(err instanceof Error);
-    assert(err instanceof redis.AbortError);
-    assert(err instanceof redis.AggregateError);
+const redisClientRead = redis.createClient(redis_host, options);
+const redisClient = redis.createClient(redis_host);
+//redisClient.on('error', function (err) {
+//    assert(err instanceof Error);
+//    assert(err instanceof redis.AbortError);
+//    assert(err instanceof redis.AggregateError);
     // The set and get get aggregated in here
-    console.log("Unable to connect to redis.");
-});
+//    console.log("Unable to connect to redis.");
+//});
 
 // Create Pub-Sub channel with redis
-const redisChannel = "board_channel;"
-redisClient.on("message", function(channel, mesage) {
+redisClient.on("message", function(channel, message) {
 		if (VERBOSE) console.log(`Received ${message} from ${channel}`);
 		if (message) {
 				if (VERBOSE) console.log("Broadcasted data from redis channel to all ws clients.");
@@ -192,9 +192,7 @@ redisClient.on("message", function(channel, mesage) {
 				wss.broadcast(message);
 		}
 });
-redisClient.subscribe(redisChannel);
- 
-
+redisClient.subscribe("board_channel");
 //**********CODE TO Write to redis cache, for the middle node***************/
 // redisClient.send_command("BITFIELD", [redisKey, "SET", "u8", `#${index}`, colour], function(err, reply) {
 // 	if (err) console.log(err);
@@ -286,7 +284,8 @@ wss.on('connection', function(ws) {
 
 	//Pull board from redis cache on first launch
 	const redisKey = "board";
-	redisClient.send_command("GET", [redisKey], function(err, reply) {
+	redisClientRead.send_command("GET", [redisKey], function(err, reply) {
+			console.log(redisClientRead);
 			if (err) {console.log("Unable to GET board from Redis. " + err);};
 			if (reply) {
 							if (VERBOSE) console.log(`REDIS GET ${redisKey}, Size: ${reply.length}`);

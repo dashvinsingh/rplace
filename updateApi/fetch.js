@@ -22,6 +22,7 @@ const options = {return_buffer: true, retry_strategy:  function(options) {
         }
 }}
 const redisClient = redis.createClient(redis_host, options);
+const redisClientPub = redis.createClient(redis_host, options);
 redisClient.on('error', function (err) {
     assert(err instanceof Error);
     assert(err instanceof redis.AbortError);
@@ -76,10 +77,13 @@ db.connect( err => {
 				redisArgs.push("#" + res.rows[i].index);
 				redisArgs.push(res.rows[i].colour);
 				console.log(res.rows[i]);
+				let index = res.rows[i].index;
+				let colour = res.rows[i].colour;
 				redisClient.send_command("BITFIELD", redisArgs, function(err, reply) {
 					if (err) console.log(err);
 			 		if (reply) {
  		    				console.log("REDIS-OK");
+						redisClientPub.publish("board_channel", `${index} ${colour}`);
 			 		}
 
 			 	});
