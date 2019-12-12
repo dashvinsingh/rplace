@@ -109,9 +109,45 @@ function updateBoard(index, colour) {
 	})
 }
 
+// Check the session id timestamp or make one
+function checkSession(req, res, next) {
+	let time = Date.now();
+	let id = req.session.id;
 
+	// Check the sessions table for an id
+	let queryString = "SELECT * FROM sessions WHERE id=?;"
+	client.query(queryString, [id], (err, data) => {
+		if (err) {
+			console.log("error:", err);
+			res.status(500);
+			res.send();
+			return;
 
-console.log("Finished connecting");
+		// Make a session row if it doesn't exist	
+		} else if (data.rowCount == 0) {
+			queryString = "INSERT INTO sessions VALUES($1, $2)";
+			client.query(queryString, [id, time], (err) => {
+				if (err) {
+					console.log("error:", err);
+					res.status(500);
+					res.send();
+					return;
+				}
+			})
+
+		// Compare the timestamp of the last time that session id was used	
+		} else {
+			let updated = data.row[0].updated;
+			let elapsed = Math.floor((time - updated)/1000);
+			if (elapsed < 10) {
+				res.status(400);
+				res.send();
+				return;
+			}
+		}
+	})
+	next();
+}
 
 
 
@@ -218,8 +254,7 @@ function validUpdate(x, y, colour) {
 		valid = 
 			Number.isInteger(x) && x != null && 0 <= x && x < DIM &&
 			Number.isInteger(y) && y != null && 0 <= y && y < DIM && 
-			Number.isInteger(colour) && colour != null && 0 <= colour && colour <= 15;// &&
-//			.match(/^[a-z0-9]+$/i);
+			Number.isInteger(colour) && colour != null && 0 <= colour && colour <= 15;
 	} catch (err) {
 		console.log("Recieved an invalid update:", err);
 		valid = false;
@@ -317,56 +352,17 @@ function getOffset(x, y){
 	return x + (y*DIM);
 }
 
-// Check the session id timestamp or make one
-function checkSession(req, res, next) {
-	let time = Date.now();
-	let id = req.session.id;
 
-	// Check the sessions table for an id
-	let queryString = "SELECT * FROM sessions WHERE id=?;"
-	client.query(queryString, [id], (err, data) => {
-		if (err) {
-			console.log("error:", err);
-			res.status(500);
-			res.send();
-			return;
-
-		// Make a session row if it doesn't exist	
-		} else if (data.rowCount == 0) {
-			queryString = "INSERT INTO sessions VALUES($1, $2)";
-			client.query(queryString, [id, time], (err) => {
-				if (err) {
-					console.log("error:", err);
-					res.status(500);
-					res.send();
-					return;
-				}
-			})
-
-		// Compare the timestamp of the last time that session id was used	
-		} else {
-			let updated = data.row[0].updated;
-			let elapsed = Math.floor((time - updated)/1000);
-			if (elapsed < 10) {
-				res.status(400);
-				res.send();
-				return;
-			}
-		}
-	})
-	next();
-}
 
 
 
 // Serve static content
 app.use(express.static('static_files')); // this directory has files to be returned
 
-// Update endpointg
-app.post('/update', printSession, (req, res) => {
+// Update endpoint
+app.post('/update', checkSession, (req, res) => {
 	console.log(req.body);
-	//console.log(res);
-	console.log("UPPPPPPPPPPPPPPPPPPDDDDDDDDDDDAAAAAAAAAAAAAAAAATTTTTTTTTTTTEEEEEEEEEEEEEEEEEEEE CCCCCCCCCAAAAAAAAAAANNNNNNNNNNNNVVVVVVVVVVAAAAAAAAAASSSSSSSS");
+	//updateBoard();
 
 
 })
