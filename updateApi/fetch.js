@@ -35,12 +35,20 @@ const db = new Client({
     port: 5432
 })
 
+<<<<<<< HEAD
 db.connect(async err => {
+=======
+db.connect( err => {
+>>>>>>> remotes/origin/database
     if (err) {
         console.error('Postgres connection error:', err.stack)
     } else {
         console.log("Connected to Persistent Storage");
+<<<<<<< HEAD
         await initalSetup();        
+=======
+        //await initalSetup();        
+>>>>>>> remotes/origin/database
         console.log("Initial setup done")
         const lastChecked = Date.now();
         while (1) {setTimeout(function() {
@@ -50,13 +58,18 @@ db.connect(async err => {
                     console.log(err);
                 } else {
                     lastChecked = lastChecked + period;
+<<<<<<< HEAD
                     console.log("send to redis");
+=======
+                    //Update Pub Sub
+>>>>>>> remotes/origin/database
                 }
             })
         },period)}
     }
 })
 
+<<<<<<< HEAD
 async function initalSetup(){
     var i = 0;
     var step = 100;
@@ -75,3 +88,21 @@ async function initalSetup(){
 }
 
 
+=======
+// async function initalSetup(){
+//     var i = 0;
+//     var step = 100;
+//     while(i <= 62499){
+//         //console.log("Trying to get from", i , "to", i+step)
+//         async.series(db.query("select * from board where index < $1 and index >= $2", [i + step, i],  (err, res) =>  {
+//             if (err) {
+//                 console.log(err);
+//             }
+//             else {
+//                 console.log("send to redis", res.rows[0].index);
+//             }
+//         }))
+//         i = i + step;
+//     }
+// }
+>>>>>>> remotes/origin/database
