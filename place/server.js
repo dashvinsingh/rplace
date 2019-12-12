@@ -236,9 +236,23 @@ wss.broadcast = function broadcast(data) {
 		console.log("Sending message:", data)
 		console.log("->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->");
 	}
+
+	if (VERBOSE) console.log(data);
+	let a = data.split(" ");
+	let index = a[0];
+	let colour = a[1];
+	let x = index % DIM;
+	let y = index/DIM;
+
+	let boardInfo = new Uint8ClampedArray(DIM*DIM + 3);
+	boardInfo[0] = x;
+	boardInfo[1] = y;
+	boardInfo[2] = 1;
+	boardInfo[3] = colour;
+
   wss.clients.forEach(function each(client) {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
+      client.send(boardInfo);
     } else {
 		console.log("Unable to send")
 	}
@@ -260,7 +274,7 @@ function validUpdate(x, y, colour) {
 			Number.isInteger(y) && y != null && 0 <= y && y < DIM && 
 			Number.isInteger(colour) && colour != null && 0 <= colour && colour <= 15;
 	} catch (err) {
-		console.log("Recieved an invalid update:", err);
+		if (VERBOSE) console.log("Recieved an invalid update:", err);
 		valid = false;
 	}
 	return valid;
